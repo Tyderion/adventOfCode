@@ -11,7 +11,8 @@ edition = "2021"
 members = [
     "day_1",
     "day_2",
+    "day_3",
 ]
 default-members = [
-    "day_2",
+    "day_3",
 ]
