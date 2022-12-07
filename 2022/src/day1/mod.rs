@@ -20,9 +20,7 @@ fn compute_calories(lines: Vec<String>) -> Vec<i32> {
 pub fn run() {
     let filename = "./src/day1/input.txt";
     let lines = fileutils::lines_from_file(filename);
-
-    let strings = lines.unwrap().into_iter().map(|l| l.unwrap()).collect();
-    let grouped_calories = compute_calories(strings);
+    let grouped_calories = compute_calories(lines);
     println!("Max: {:?}", grouped_calories.iter().max().unwrap());
 
     let top3 = grouped_calories.iter().take(3).sum::<i32>();
