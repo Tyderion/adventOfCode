@@ -1,6 +1,14 @@
 use std::cmp::Reverse;
 
-use crate::fileutils;
+pub fn main() {
+    let filename = "day_1/src/input.txt";
+    let lines = fileutils::lines_from_file(filename);
+    let grouped_calories = compute_calories(lines);
+    println!("Max: {:?}", grouped_calories.iter().max().unwrap());
+
+    let top3 = grouped_calories.iter().take(3).sum::<i32>();
+    println!("Top 3 carry: {:?}", top3);
+}
 
 fn compute_calories(lines: Vec<String>) -> Vec<i32> {
     let mut grouped_calories = lines.iter().fold(
@@ -17,16 +25,6 @@ fn compute_calories(lines: Vec<String>) -> Vec<i32> {
     grouped_calories
 }
 
-#[allow(dead_code)]
-pub fn run() {
-    let filename = "./src/day1/input.txt";
-    let lines = fileutils::lines_from_file(filename);
-    let grouped_calories = compute_calories(lines);
-    println!("Max: {:?}", grouped_calories.iter().max().unwrap());
-
-    let top3 = grouped_calories.iter().take(3).sum::<i32>();
-    println!("Top 3 carry: {:?}", top3);
-}
 
 #[cfg(test)]
 mod tests {

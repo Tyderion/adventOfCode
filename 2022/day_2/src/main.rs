@@ -1,4 +1,14 @@
-use crate::fileutils;
+pub fn main() {
+    let filename = "./day_2/src/input.txt";
+    let lines = fileutils::lines_from_file(filename);
+
+    let result_part1 = part1(lines.clone());
+    println!("Result: {:?} Points", result_part1);
+
+    let result_part2 = part2(lines);
+    println!("Result Part 2: {:?} Points", result_part2)
+}
+
 const WIN_POINTS: i32 = 6;
 const DRAW_POINTS: i32 = 3;
 const LOSS_POINTS: i32 = 0;
@@ -93,18 +103,6 @@ fn part1(lines: Vec<String>) -> i32 {
 
 fn part2(lines: Vec<String>) -> i32 {
     compute_results(convert_part2(lines))
-}
-
-#[allow(dead_code)]
-pub fn run() {
-    let filename = "./src/day2/input.txt";
-    let lines = fileutils::lines_from_file(filename);
-
-    let result_part1 = part1(lines.clone());
-    println!("Result: {:?} Points", result_part1);
-
-    let result_part2 = part2(lines);
-    println!("Result Part 2: {:?} Points", result_part2)
 }
 
 #[cfg(test)]
