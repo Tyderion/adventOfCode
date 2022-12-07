@@ -17,6 +17,7 @@ fn compute_calories(lines: Vec<String>) -> Vec<i32> {
     grouped_calories
 }
 
+#[allow(dead_code)]
 pub fn run() {
     let filename = "./src/day1/input.txt";
     let lines = fileutils::lines_from_file(filename);
