@@ -7,9 +7,6 @@ const ROCK_POINTS: i32 = 1;
 const PAPER_POINTS: i32 = 2;
 const SCISSORS_POINTS: i32 = 3;
 
-const MY_ROCK: &str = "X";
-const MY_PAPER: &str = "Y";
-const MY_SCISSORS: &str = "Z";
 const ROCK: &str = "A";
 const PAPER: &str = "B";
 const SCISSORS: &str = "C";
@@ -27,6 +24,9 @@ fn compute_results(lines: Vec<String>) -> i32 {
 }
 
 fn convert_part1(lines: Vec<String>) -> Vec<String> {
+    const MY_ROCK: &str = "X";
+    const MY_PAPER: &str = "Y";
+    const MY_SCISSORS: &str = "Z";
     lines
         .iter()
         .map(|l| {
