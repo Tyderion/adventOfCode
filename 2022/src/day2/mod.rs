@@ -14,19 +14,19 @@ const ROCK: &str = "A";
 const PAPER: &str = "B";
 const SCISSORS: &str = "C";
 
-fn compute_rps_results_by_pair(lines: Vec<String>) -> Vec<i32> {
+fn compute_results(lines: Vec<String>) -> i32 {
     lines.iter().fold(vec![], |mut result, current_pair| {
 
         let current_score = match current_pair.split(' ').collect::<Vec<&str>>().as_slice() {
-            [ROCK, MY_ROCK] => Some(DRAW_POINTS + ROCK_POINTS),
-            [ROCK, MY_PAPER] => Some(WIN_POINTS + PAPER_POINTS),
-            [ROCK, MY_SCISSORS] => Some(LOSS_POINTS + SCISSORS_POINTS),
-            [PAPER, MY_ROCK] => Some(LOSS_POINTS + ROCK_POINTS),
-            [PAPER, MY_PAPER] =>Some(DRAW_POINTS + PAPER_POINTS),
-            [PAPER, MY_SCISSORS] => Some(WIN_POINTS + SCISSORS_POINTS),
-            [SCISSORS, MY_ROCK] => Some(WIN_POINTS + ROCK_POINTS),
-            [SCISSORS, MY_PAPER] => Some(LOSS_POINTS + PAPER_POINTS),
-            [SCISSORS, MY_SCISSORS] => Some(DRAW_POINTS + SCISSORS_POINTS),
+            [ROCK, ROCK] => Some(DRAW_POINTS + ROCK_POINTS),
+            [ROCK, PAPER] => Some(WIN_POINTS + PAPER_POINTS),
+            [ROCK, SCISSORS] => Some(LOSS_POINTS + SCISSORS_POINTS),
+            [PAPER, ROCK] => Some(LOSS_POINTS + ROCK_POINTS),
+            [PAPER, PAPER] =>Some(DRAW_POINTS + PAPER_POINTS),
+            [PAPER, SCISSORS] => Some(WIN_POINTS + SCISSORS_POINTS),
+            [SCISSORS, ROCK] => Some(WIN_POINTS + ROCK_POINTS),
+            [SCISSORS, PAPER] => Some(LOSS_POINTS + PAPER_POINTS),
+            [SCISSORS, SCISSORS] => Some(DRAW_POINTS + SCISSORS_POINTS),
             _ => None
         };
 
@@ -36,10 +36,14 @@ fn compute_rps_results_by_pair(lines: Vec<String>) -> Vec<i32> {
         }
 
         result
-    })
+    }).iter().sum()
 }
 
-fn compute_rps_results_by_pair_part2(lines: Vec<String>) -> Vec<String> {
+fn convert_part1(lines: Vec<String>) -> Vec<String> {
+    lines.iter().map(|l| l.replace(MY_ROCK, ROCK).replace(MY_PAPER, PAPER).replace(MY_SCISSORS, SCISSORS)).collect()
+}
+
+fn convert_part2(lines: Vec<String>) -> Vec<String> {
 
     const LOSS: &str = "X";
     const DRAW: &str = "Y";
@@ -47,15 +51,15 @@ fn compute_rps_results_by_pair_part2(lines: Vec<String>) -> Vec<String> {
 
     lines.iter().fold(vec![], |mut result, current_pair| {
         let new_pair = match current_pair.split(' ').collect::<Vec<&str>>().as_slice() {
-            [ROCK, LOSS] => Some(format!("{ROCK} {MY_SCISSORS}")),
-            [ROCK, DRAW] => Some(format!("{ROCK} {MY_ROCK}")),
-            [ROCK, WIN] => Some(format!("{ROCK} {MY_PAPER}")),
-            [PAPER, LOSS] => Some(format!("{PAPER} {MY_ROCK}")),
-            [PAPER, DRAW] => Some(format!("{PAPER} {MY_PAPER}")),
-            [PAPER, WIN] => Some(format!("{PAPER} {MY_SCISSORS}")),
-            [SCISSORS, LOSS] => Some(format!("{SCISSORS} {MY_PAPER}")),
-            [SCISSORS, DRAW] => Some(format!("{SCISSORS} {MY_SCISSORS}")),
-            [SCISSORS, WIN] => Some(format!("{SCISSORS} {MY_ROCK}")),
+            [ROCK, LOSS] => Some(format!("{ROCK} {SCISSORS}")),
+            [ROCK, DRAW] => Some(format!("{ROCK} {ROCK}")),
+            [ROCK, WIN] => Some(format!("{ROCK} {PAPER}")),
+            [PAPER, LOSS] => Some(format!("{PAPER} {ROCK}")),
+            [PAPER, DRAW] => Some(format!("{PAPER} {PAPER}")),
+            [PAPER, WIN] => Some(format!("{PAPER} {SCISSORS}")),
+            [SCISSORS, LOSS] => Some(format!("{SCISSORS} {PAPER}")),
+            [SCISSORS, DRAW] => Some(format!("{SCISSORS} {SCISSORS}")),
+            [SCISSORS, WIN] => Some(format!("{SCISSORS} {ROCK}")),
             _ => None
         };
 
@@ -69,18 +73,12 @@ fn compute_rps_results_by_pair_part2(lines: Vec<String>) -> Vec<String> {
 }
 
 
-fn compute_rps_results(by_line: Vec<i32>) -> i32 {
-    by_line.iter().sum()
-}
-
 fn part1(lines: Vec<String>) -> i32 {
-    let by_pair = compute_rps_results_by_pair(lines);
-    compute_rps_results(by_pair)
+    compute_results(convert_part1(lines))
 }
 
 fn part2(lines: Vec<String>) -> i32 {
-    let converted = compute_rps_results_by_pair_part2(lines);
-    compute_rps_results(compute_rps_results_by_pair(converted))
+    compute_results(convert_part2(lines))
 }
 
 #[allow(dead_code)]
@@ -100,21 +98,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn rps_results_by_line_are_computed_correctly() {
-        let result = compute_rps_results_by_pair(["A Y", "B X", "C Z"].map(String::from).to_vec());
-        assert_eq!(result, vec![8, 1, 6]);
-    }
-
-    #[test]
-    fn rps_results_are_computed_correctly() {
-        let result = compute_rps_results(vec![8, 1, 6]);
+    fn rps_part1() {
+        let result = part1(["A Y", "B X", "C Z"].map(String::from).to_vec());
         assert_eq!(result, 15);
     }
 
+
     #[test]
-    fn rps_results_by_line_are_computed_correctly_part2() {
-        let result =
-            compute_rps_results_by_pair_part2(["A Y", "B X", "C Z"].map(String::from).to_vec());
-        assert_eq!(result, ["A X", "B X", "C X"].map(String::from).to_vec());
+    fn rps_part2() {
+        let result = part2(["A Y", "B X", "C Z"].map(String::from).to_vec());
+        assert_eq!(result, 12);
     }
 }
