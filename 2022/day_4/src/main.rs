@@ -69,27 +69,19 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
+    const EXAMPLE_INPUT: [&str; 6] = [
+        "2-4,6-8", "2-3,4-5", "5-7,7-9", "2-8,3-7", "6-6,4-6", "2-6,4-8",
+    ];
+
     #[test]
     fn example_case_part1() {
-        let result = part1(
-            [
-                "2-4,6-8", "2-3,4-5", "5-7,7-9", "2-8,3-7", "6-6,4-6", "2-6,4-8",
-            ]
-            .map(String::from)
-            .to_vec(),
-        );
+        let result = part1(EXAMPLE_INPUT.map(String::from).to_vec(),);
         assert_eq!(result, 2);
     }
 
     #[test]
     fn example_case_part2() {
-        let result = part2(
-            [
-                "2-4,6-8", "2-3,4-5", "5-7,7-9", "2-8,3-7", "6-6,4-6", "2-6,4-8",
-            ]
-            .map(String::from)
-            .to_vec(),
-        );
+        let result = part2(EXAMPLE_INPUT.map(String::from).to_vec(),);
         assert_eq!(result, 4);
     }
 
