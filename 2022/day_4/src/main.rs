@@ -18,20 +18,20 @@ struct Pair {
 }
 
 fn part1(lines: Vec<String>) -> usize {
-    ranges_from_strings(lines)
+    pairs_from_strings(lines)
         .iter()
-        .filter(|pair| is_subset(pair))
+        .filter(has_subset)
         .count()
 }
 
 fn part2(lines: Vec<String>) -> usize {
-    ranges_from_strings(lines)
+    pairs_from_strings(lines)
         .iter()
-        .filter(|pair| has_common_elements(pair))
+        .filter(has_common_elements)
         .count()
 }
 
-fn ranges_from_strings(lines: Vec<String>) -> Vec<Pair> {
+fn pairs_from_strings(lines: Vec<String>) -> Vec<Pair> {
     lines
         .iter()
         .map(|line| line.split(',').collect::<Vec<&str>>())
@@ -53,13 +53,13 @@ fn parse_range(range: &str) -> HashSet<i32> {
     (parts[0]..=parts[1]).collect::<HashSet<i32>>()
 }
 
-fn is_subset(pair: &Pair) -> bool {
+fn has_subset(pair: &&Pair) -> bool {
     let Pair { left, right } = pair;
-    let intersect = left & right;
-    &intersect == left || &intersect == right
+    let common_count = (left & right).len();
+    common_count == left.len() || common_count == right.len()
 }
 
-fn has_common_elements(pair: &Pair) -> bool {
+fn has_common_elements(pair: &&Pair) -> bool {
     let Pair { left, right } = pair;
     (left & right).len() > 0
 }
@@ -104,7 +104,7 @@ mod tests {
     #[test_case(&[1, 2, 3, 4], &[5, 6], false; "[1, 2, 3, 4] does not contain [5, 6]")]
     #[test_case(&[5, 6], &[1, 2, 3, 4],  false; "[5, 6] is not subset of [1, 2, 3, 4]")]
     fn fully_contains(left: &[i32], right: &[i32], expected: bool) {
-        let result = is_subset(&Pair {
+        let result = has_subset(&&Pair {
             left: HashSet::from_iter(left.iter().map(|x| *x)),
             right: HashSet::from_iter(right.iter().map(|x| *x)),
         });
