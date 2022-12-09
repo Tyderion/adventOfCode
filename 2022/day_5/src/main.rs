@@ -28,18 +28,16 @@ lazy_static! {
 
 impl UnloadingPlan {
     fn parse_stacks(state: &mut Vec<String>) -> Vec<Stack> {
-        let crate_indices =
+        let crate_indices: Vec<usize> =
             state
-                .pop()
+                .last()
                 .unwrap()
                 .char_indices()
-                .fold(vec![], |mut result, (index, value)| match value {
-                    ' ' => result,
-                    _ => {
-                        result.push(index);
-                        result
-                    }
-                });
+                .filter_map(|(index, value)| match value {
+                    ' ' => None,
+                    _ => Some(index)
+                })
+                .collect();
         let number_of_stacks = crate_indices.len();
         let mut stacks = vec![Vec::<char>::new(); number_of_stacks];
 
@@ -101,26 +99,20 @@ impl UnloadingPlan {
         };
     }
 
-    pub fn execute_moves_part1(&mut self) {
+    pub fn execute_moves(&mut self, move_strategy: fn(&mut UnloadingPlan, Move)) {
         for mv in self.moves.clone() {
-            self.execute_move_part1(mv);
+            move_strategy(self, mv);
         }
     }
 
-    fn execute_move_part1(&mut self, mv: Move) {
+    pub fn move_strategy_part1(&mut self, mv: Move) {
         for _ in 0..mv.amount {
             let moved = self.stacks[mv.from - 1].pop().unwrap();
             self.stacks[mv.to - 1].push(moved)
         }
     }
 
-    pub fn execute_moves_part2(&mut self) {
-        for mv in self.moves.clone() {
-            self.execute_move_part2(mv);
-        }
-    }
-
-    fn execute_move_part2(&mut self, mv: Move) {
+    pub fn move_strategy_part2(&mut self, mv: Move) {
         let insert_start = self.stacks[mv.to - 1].len(); 
         for _ in 0..mv.amount {
             let element = self.stacks[mv.from - 1].pop().unwrap();
@@ -131,11 +123,7 @@ impl UnloadingPlan {
     pub fn result(&mut self) -> String {
         self.stacks
             .iter()
-            .map(|s| s.last().to_owned())
-            .map(|c| match c {
-                None => ' ',
-                Some(x) => *x,
-            })
+            .filter_map(|s| s.last().to_owned())
             .into_iter()
             .collect()
     }
@@ -150,13 +138,13 @@ struct Move {
 
 fn part1(lines: Vec<String>) -> String {
     let mut plan = UnloadingPlan::from(lines);
-    plan.execute_moves_part1();
+    plan.execute_moves(UnloadingPlan::move_strategy_part1);
     String::from(plan.result())
 }
 
 fn part2(lines: Vec<String>) -> String {
     let mut plan = UnloadingPlan::from(lines);
-    plan.execute_moves_part2();
+    plan.execute_moves(UnloadingPlan::move_strategy_part2);
     String::from(plan.result())
 }
 
