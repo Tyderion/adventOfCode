@@ -16,12 +16,17 @@ fn main() {
 type Stack = Vec<char>;
 
 #[derive(Debug)]
-struct LoadingPlan {
+struct UnloadingPlan {
     stacks: Vec<Stack>,
     moves: Vec<Move>,
 }
 
-impl LoadingPlan {
+lazy_static! {
+    static ref RE_MOVE: Regex =
+        Regex::new(r"move (?P<amount>\d+) from (?P<from>\d+) to (?P<to>\d+)").unwrap();
+}
+
+impl UnloadingPlan {
     fn parse_stacks(state: &mut Vec<String>) -> Vec<Stack> {
         let crate_indices =
             state
@@ -54,25 +59,42 @@ impl LoadingPlan {
         stacks
     }
 
-    pub fn from(lines: Vec<String>) -> LoadingPlan {
+    fn parse_moves(moves: &Vec<String>) -> Vec<Move> {
+        moves.iter().map(|move_str| Self::parse_move(move_str)).collect()
+    }
+
+    fn parse_move(mv: &str) -> Move {
+        match RE_MOVE.captures(mv) {
+            Some(capture) => Move {
+                amount: capture.name("amount").unwrap().as_str().parse::<i32>().unwrap(),
+                from: capture.name("from").unwrap().as_str().parse::<i32>().unwrap(),
+                to: capture.name("to").unwrap().as_str().parse::<i32>().unwrap(),
+            },
+            None => panic!("Invalid move: {}", mv),
+        }
+    }
+
+    pub fn from(lines: Vec<String>) -> UnloadingPlan {
         let split = lines.iter().position(|l| l.is_empty()).unwrap();
 
-        return LoadingPlan {
+        return UnloadingPlan {
             stacks: Self::parse_stacks(&mut lines[0..split].to_vec()),
-            moves: vec![],
+            moves: Self::parse_moves(&lines[split + 1..lines.len()].to_vec()),
         };
     }
+
 }
 
 #[derive(Debug)]
 struct Move {
+    amount: i32,
     from: i32,
     to: i32,
-    amount: i32,
 }
 
 fn part1(lines: Vec<String>) -> String {
-    let plan = LoadingPlan::from(lines);
+    let plan = UnloadingPlan::from(lines);
+    println!("{:?}", plan);
     String::from("")
 }
 
