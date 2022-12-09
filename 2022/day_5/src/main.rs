@@ -12,7 +12,67 @@ fn main() {
     println!("Part2: {}", part2_result);
 }
 
+// Vectors are stacks (push/pop) -> map crates into vec and then push/pop the moves
+type Stack = Vec<char>;
+
+#[derive(Debug)]
+struct LoadingPlan {
+    stacks: Vec<Stack>,
+    moves: Vec<Move>,
+}
+
+impl LoadingPlan {
+    fn parse_stacks(state: &mut Vec<String>) -> Vec<Stack> {
+        let crate_indices =
+            state
+                .pop()
+                .unwrap()
+                .char_indices()
+                .fold(vec![], |mut result, (index, value)| match value {
+                    ' ' => result,
+                    _ => {
+                        result.push(index);
+                        result
+                    }
+                });
+        let number_of_stacks = crate_indices.len();
+        let mut stacks = vec![Vec::<char>::new(); number_of_stacks];
+
+        while let Some(row) = state.pop() {
+            crate_indices
+                .iter()
+                .enumerate()
+                .for_each(
+                    |(stack_index, crate_index)| match row.chars().nth(*crate_index) {
+                        None => (),
+                        Some(c) if c.is_alphabetic() => stacks[stack_index].push(c),
+                        Some(_) => (),
+                    },
+                );
+        }
+
+        stacks
+    }
+
+    pub fn from(lines: Vec<String>) -> LoadingPlan {
+        let split = lines.iter().position(|l| l.is_empty()).unwrap();
+
+        return LoadingPlan {
+            stacks: Self::parse_stacks(&mut lines[0..split].to_vec()),
+            moves: vec![],
+        };
+    }
+}
+
+#[derive(Debug)]
+struct Move {
+    from: i32,
+    to: i32,
+    amount: i32,
+}
+
 fn part1(lines: Vec<String>) -> String {
+    let plan = LoadingPlan::from(lines);
     String::from("")
 }
 
