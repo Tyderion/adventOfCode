@@ -1,5 +1,5 @@
-use regex::Regex;
 use lazy_static::lazy_static;
+use regex::Regex;
 
 fn main() {
     let filename = "day_5/src/input.txt";
@@ -60,15 +60,33 @@ impl UnloadingPlan {
     }
 
     fn parse_moves(moves: &Vec<String>) -> Vec<Move> {
-        moves.iter().map(|move_str| Self::parse_move(move_str)).collect()
+        moves
+            .iter()
+            .map(|move_str| Self::parse_move(move_str))
+            .collect()
     }
 
     fn parse_move(mv: &str) -> Move {
         match RE_MOVE.captures(mv) {
             Some(capture) => Move {
-                amount: capture.name("amount").unwrap().as_str().parse::<i32>().unwrap(),
-                from: capture.name("from").unwrap().as_str().parse::<i32>().unwrap(),
-                to: capture.name("to").unwrap().as_str().parse::<i32>().unwrap(),
+                amount: capture
+                    .name("amount")
+                    .unwrap()
+                    .as_str()
+                    .parse::<usize>()
+                    .unwrap(),
+                from: capture
+                    .name("from")
+                    .unwrap()
+                    .as_str()
+                    .parse::<usize>()
+                    .unwrap(),
+                to: capture
+                    .name("to")
+                    .unwrap()
+                    .as_str()
+                    .parse::<usize>()
+                    .unwrap(),
             },
             None => panic!("Invalid move: {}", mv),
         }
@@ -83,19 +101,48 @@ impl UnloadingPlan {
         };
     }
 
+    pub fn execute_moves(&mut self) {
+        // println!("Start: {:?}", &self);
+        for mv in self.moves.clone() {
+            self.execute_move(mv);
+            // println!("After move {:?}: {:?}", mv, self);
+        }
+    }
+
+    fn execute_move(&mut self, mv: Move) {
+        for _ in 0..mv.amount {
+            // println!("Move #{}: from {} to {}", i,  mv.from, mv.to);
+            let moved = self.stacks[mv.from - 1].pop().unwrap();
+            self.stacks[mv.to - 1].push(moved)
+        }
+    }
+
+    pub fn result(&mut self) -> String {
+        self.stacks
+            .iter()
+            .map(|s| s.last().to_owned())
+            .map(|c| match c {
+                None => ' ',
+                Some(x) => *x,
+            })
+            .into_iter()
+            .collect()
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 struct Move {
-    amount: i32,
-    from: i32,
-    to: i32,
+    amount: usize,
+    from: usize,
+    to: usize,
 }
 
 fn part1(lines: Vec<String>) -> String {
-    let plan = UnloadingPlan::from(lines);
-    println!("{:?}", plan);
-    String::from("")
+    let mut plan = UnloadingPlan::from(lines);
+    println!("Before: {:?}", plan);
+    plan.execute_moves();
+    println!("After: {:?}", plan);
+    String::from(plan.result())
 }
 
 fn part2(_lines: Vec<String>) -> String {
