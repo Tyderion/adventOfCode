@@ -101,19 +101,30 @@ impl UnloadingPlan {
         };
     }
 
-    pub fn execute_moves(&mut self) {
-        // println!("Start: {:?}", &self);
+    pub fn execute_moves_part1(&mut self) {
         for mv in self.moves.clone() {
-            self.execute_move(mv);
-            // println!("After move {:?}: {:?}", mv, self);
+            self.execute_move_part1(mv);
         }
     }
 
-    fn execute_move(&mut self, mv: Move) {
+    fn execute_move_part1(&mut self, mv: Move) {
         for _ in 0..mv.amount {
-            // println!("Move #{}: from {} to {}", i,  mv.from, mv.to);
             let moved = self.stacks[mv.from - 1].pop().unwrap();
             self.stacks[mv.to - 1].push(moved)
+        }
+    }
+
+    pub fn execute_moves_part2(&mut self) {
+        for mv in self.moves.clone() {
+            self.execute_move_part2(mv);
+        }
+    }
+
+    fn execute_move_part2(&mut self, mv: Move) {
+        let insert_start = self.stacks[mv.to - 1].len(); 
+        for _ in 0..mv.amount {
+            let element = self.stacks[mv.from - 1].pop().unwrap();
+            self.stacks[mv.to - 1].insert(insert_start, element);
         }
     }
 
@@ -139,14 +150,14 @@ struct Move {
 
 fn part1(lines: Vec<String>) -> String {
     let mut plan = UnloadingPlan::from(lines);
-    println!("Before: {:?}", plan);
-    plan.execute_moves();
-    println!("After: {:?}", plan);
+    plan.execute_moves_part1();
     String::from(plan.result())
 }
 
-fn part2(_lines: Vec<String>) -> String {
-    String::from("")
+fn part2(lines: Vec<String>) -> String {
+    let mut plan = UnloadingPlan::from(lines);
+    plan.execute_moves_part2();
+    String::from(plan.result())
 }
 
 #[cfg(test)]
@@ -169,5 +180,12 @@ mod tests {
     fn verify_case() {
         let result = part1(EXAMPLE_INPUT.map(String::from).to_vec());
         assert_eq!(result, "CMZ");
+    }
+
+
+    #[test]
+    fn verify_case_part2() {
+        let result = part2(EXAMPLE_INPUT.map(String::from).to_vec());
+        assert_eq!(result, "MCD");
     }
 }
