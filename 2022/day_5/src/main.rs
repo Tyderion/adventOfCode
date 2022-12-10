@@ -39,48 +39,41 @@ impl UnloadingPlan {
                 _ => Some(index),
             })
             .collect();
-        let number_of_stacks = crate_indices.len();
-        let mut stacks = vec![Vec::<char>::new(); number_of_stacks];
+
+        let mut stacks = vec![Vec::<char>::new(); crate_indices.len()];
 
         while let Some(row) = state.pop() {
-            crate_indices
-                .iter()
-                .enumerate()
-                .for_each(
-                    |(stack_index, crate_index)| match row.chars().nth(*crate_index) {
-                        None => (),
-                        Some(c) if c.is_alphabetic() => stacks[stack_index].push(c),
-                        Some(_) => (),
-                    },
-                );
+            for (stack_index, crate_index) in crate_indices.iter().enumerate() {
+                match row.chars().nth(*crate_index) {
+                    Some(c) if c.is_alphabetic() => stacks[stack_index].push(c),
+                    _ => (),
+                }
+            }
         }
 
         stacks
     }
 
     fn parse_moves(moves: &Vec<String>) -> Vec<Move> {
-        moves
-            .iter()
-            .map(|move_str| Self::parse_move(move_str))
-            .collect()
+        moves.iter().map(Self::parse_move).collect()
     }
 
-    fn get_value_from_group<T: FromStr>(name: &str, capture: &Captures) -> T
-    where
-        <T as FromStr>::Err: Debug,
-    {
-        capture.name(name).unwrap().as_str().parse().unwrap()
-    }
+    fn parse_move<T: AsRef<str>>(mv: T) -> Move {
+        fn get_value_from_group<S: FromStr>(name: &str, capture: &Captures) -> S
+        where
+            <S as FromStr>::Err: Debug,
+        {
+            capture.name(name).unwrap().as_str().parse().unwrap()
+        }
 
-    fn parse_move(mv: &str) -> Move {
-        if let Some(capture) = RE_MOVE.captures(mv) {
+        if let Some(capture) = RE_MOVE.captures(mv.as_ref()) {
             Move {
-                amount: Self::get_value_from_group("amount", &capture),
-                from: Self::get_value_from_group("from", &capture),
-                to: Self::get_value_from_group("to", &capture),
+                amount: get_value_from_group("amount", &capture),
+                from: get_value_from_group("from", &capture),
+                to: get_value_from_group("to", &capture),
             }
         } else {
-            panic!("Invalid move: {}", mv);
+            panic!("Invalid move: {}", mv.as_ref());
         }
     }
 
@@ -89,7 +82,7 @@ impl UnloadingPlan {
 
         return UnloadingPlan {
             stacks: Self::parse_stacks(&mut lines[0..split].to_vec()),
-            moves: Self::parse_moves(&lines[split + 1..lines.len()].to_vec()),
+            moves: Self::parse_moves(&lines[split + 1..].to_vec()),
         };
     }
 
