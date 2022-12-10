@@ -211,6 +211,43 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "'day_6'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=day_6",
+                    "--package=day_6"
+                ],
+                "filter": {
+                    "name": "day_6",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "unit tests 'day_6'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=day_6",
+                    "--package=day_6"
+                ],
+                "filter": {
+                    "name": "day_6",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "'advent_of_code_2022'",
             "cargo": {
                 "args": [
