@@ -1,5 +1,7 @@
+use std::{fmt::Debug, str::FromStr};
+
 use lazy_static::lazy_static;
-use regex::Regex;
+use regex::{Captures, Regex};
 
 fn main() {
     let filename = "day_5/src/input.txt";
@@ -28,16 +30,15 @@ lazy_static! {
 
 impl UnloadingPlan {
     fn parse_stacks(state: &mut Vec<String>) -> Vec<Stack> {
-        let crate_indices: Vec<usize> =
-            state
-                .last()
-                .unwrap()
-                .char_indices()
-                .filter_map(|(index, value)| match value {
-                    ' ' => None,
-                    _ => Some(index)
-                })
-                .collect();
+        let crate_indices: Vec<usize> = state
+            .last()
+            .unwrap()
+            .char_indices()
+            .filter_map(|(index, value)| match value {
+                ' ' => None,
+                _ => Some(index),
+            })
+            .collect();
         let number_of_stacks = crate_indices.len();
         let mut stacks = vec![Vec::<char>::new(); number_of_stacks];
 
@@ -64,29 +65,22 @@ impl UnloadingPlan {
             .collect()
     }
 
+    fn get_value_from_group<T: FromStr>(name: &str, capture: &Captures) -> T
+    where
+        <T as FromStr>::Err: Debug,
+    {
+        capture.name(name).unwrap().as_str().parse().unwrap()
+    }
+
     fn parse_move(mv: &str) -> Move {
-        match RE_MOVE.captures(mv) {
-            Some(capture) => Move {
-                amount: capture
-                    .name("amount")
-                    .unwrap()
-                    .as_str()
-                    .parse::<usize>()
-                    .unwrap(),
-                from: capture
-                    .name("from")
-                    .unwrap()
-                    .as_str()
-                    .parse::<usize>()
-                    .unwrap(),
-                to: capture
-                    .name("to")
-                    .unwrap()
-                    .as_str()
-                    .parse::<usize>()
-                    .unwrap(),
-            },
-            None => panic!("Invalid move: {}", mv),
+        if let Some(capture) = RE_MOVE.captures(mv) {
+            Move {
+                amount: Self::get_value_from_group("amount", &capture),
+                from: Self::get_value_from_group("from", &capture),
+                to: Self::get_value_from_group("to", &capture),
+            }
+        } else {
+            panic!("Invalid move: {}", mv);
         }
     }
 
@@ -113,7 +107,7 @@ impl UnloadingPlan {
     }
 
     pub fn move_strategy_part2(&mut self, mv: Move) {
-        let insert_start = self.stacks[mv.to - 1].len(); 
+        let insert_start = self.stacks[mv.to - 1].len();
         for _ in 0..mv.amount {
             let element = self.stacks[mv.from - 1].pop().unwrap();
             self.stacks[mv.to - 1].insert(insert_start, element);
@@ -131,7 +125,7 @@ impl UnloadingPlan {
 
 #[derive(Debug, Copy, Clone)]
 struct Move {
-    amount: usize,
+    amount: u32,
     from: usize,
     to: usize,
 }
@@ -169,7 +163,6 @@ mod tests {
         let result = part1(EXAMPLE_INPUT.map(String::from).to_vec());
         assert_eq!(result, "CMZ");
     }
-
 
     #[test]
     fn verify_case_part2() {
