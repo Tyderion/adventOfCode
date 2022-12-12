@@ -44,33 +44,42 @@ impl File {
 impl Directory {
     fn print(&self, level: usize) -> String {
         let indent = "  ".repeat(level + 1);
-        format!(
-            "- {} (dir)\n{}{}\n{}{}",
-            self.name,
-            indent,
-            self.subdirs
-                .iter()
-                .map(|child| child.print(level + 1))
-                .collect::<Vec<String>>()
-                .join(&format!("\n{}", indent)),
-            indent,
-            self.children
-                .iter()
-                .map(|child| child.print(level + 1))
-                .collect::<Vec<String>>()
-                .join(&format!("\n{}", indent))
-        )
+        let dirs = match self.subdirs.len() {
+            0 => "".to_string(),
+            _ => format!(
+                "\n{}{}",
+                indent,
+                self.subdirs
+                    .iter()
+                    .map(|child| child.print(level + 1))
+                    .collect::<Vec<String>>()
+                    .join(&format!("\n{}", indent))
+            ),
+        };
+        let children = match self.children.len() {
+            0 => "".to_string(),
+            _ => format!(
+                "\n{}{}",
+                indent,
+                self.children
+                    .iter()
+                    .map(|child| child.print(level + 1))
+                    .collect::<Vec<String>>()
+                    .join(&format!("\n{}", indent))
+            ),
+        };
+        format!("- {} (dir) {} {}", self.name, children, dirs)
     }
 }
 
-fn recursive_walk(lines: Vec<String>, current_dir: &mut Directory) {
+fn recursive_walk(lines: Vec<String>, current_dir: &mut Directory) -> usize {
     match lines.as_slice() {
         [line, rest @ ..] => match line.split(" ").collect::<Vec<&str>>().as_slice() {
-            ["$", "ls"] => recursive_walk(rest.to_vec(), current_dir),
+            ["$", "ls"] => recursive_walk(rest.to_vec(), current_dir) + 1,
             ["$", "cd", name] => match name {
                 &".." => {
                     println!("going back up from {}", current_dir.name);
-                    ()
+                    1
                 }
                 name => {
                     let mut dir = Directory {
@@ -79,22 +88,28 @@ fn recursive_walk(lines: Vec<String>, current_dir: &mut Directory) {
                         subdirs: vec![],
                     };
                     println!("In {}, Going down to {}", current_dir.name, dir.name);
-                    recursive_walk(rest.to_vec(), &mut dir);
-                    current_dir.subdirs.push(dir);
+                    let mut eaten = recursive_walk(rest.to_vec(), &mut dir);
+                    loop {
+                        eaten += recursive_walk(rest[eaten..].to_vec(), current_dir);
+                        if eaten == rest.len() {
+                            current_dir.subdirs.push(dir);
+                            return eaten + 1;
+                        }
+                    }
                 }
             },
-            ["dir", _] => recursive_walk(rest.to_vec(), current_dir),
+            ["dir", _] => recursive_walk(rest.to_vec(), current_dir) + 1,
             [size, name] => {
                 current_dir.children.push(File {
                     name: name.to_string(),
                     size: size.parse().unwrap(),
                 });
                 println!("In {}, adding file {}", current_dir.name, name);
-                recursive_walk(rest.to_vec(), current_dir)
+                1 + recursive_walk(rest.to_vec(), current_dir)
             }
             _ => panic!("Invalid line"),
         },
-        _ => return,
+        _ => 0,
     }
 }
 
@@ -151,17 +166,12 @@ mod tests {
         "7214296 k",
     ];
 
-    static EXAMPLE2: [&str; 11] = [
+    static EXAMPLE2: [&str; 6] = [
         "$ cd /",
-        "$ ls",
-        "dir a",
-        "111 r.txt",
         "$ cd a",
         "$ cd b",
-        "$ ls",
         "222 b.txt",
         "$ cd ..",
-        "$ ls",
         "333 a.txt",
     ];
 
