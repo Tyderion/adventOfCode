@@ -1,5 +1,6 @@
 use std::{
     collections::{vec_deque, VecDeque},
+    fmt::Display,
     panic,
     thread::current,
     vec,
@@ -20,6 +21,7 @@ fn main() {
 struct Directory {
     name: String,
     children: Vec<File>,
+    subdirs: Vec<Directory>,
 }
 
 #[derive(Debug, Clone)]
@@ -28,55 +30,89 @@ struct File {
     size: u32,
 }
 
-fn recursive_walk(
-    lines: Vec<String>,
-    mut current_dir: Directory,
-    dirs: &mut Vec<Directory>,
-) -> u32 {
+impl File {
+    fn print(&self, level: usize) -> String {
+        format!(
+            "{}- {} (file, size={})",
+            " ".repeat(level),
+            self.name,
+            self.size
+        )
+    }
+}
+
+impl Directory {
+    fn print(&self, level: usize) -> String {
+        let indent = "  ".repeat(level + 1);
+        format!(
+            "- {} (dir)\n{}{}\n{}{}",
+            self.name,
+            indent,
+            self.subdirs
+                .iter()
+                .map(|child| child.print(level + 1))
+                .collect::<Vec<String>>()
+                .join(&format!("\n{}", indent)),
+            indent,
+            self.children
+                .iter()
+                .map(|child| child.print(level + 1))
+                .collect::<Vec<String>>()
+                .join(&format!("\n{}", indent))
+        )
+    }
+}
+
+fn recursive_walk(lines: Vec<String>, current_dir: &mut Directory) {
     match lines.as_slice() {
         [line, rest @ ..] => match line.split(" ").collect::<Vec<&str>>().as_slice() {
-            ["$", "ls"] => recursive_walk(rest.to_vec(), current_dir, dirs),
+            ["$", "ls"] => recursive_walk(rest.to_vec(), current_dir),
             ["$", "cd", name] => match name {
                 &".." => {
-                    dirs.push(current_dir);
-                    0
+                    println!("going back up from {}", current_dir.name);
+                    ()
                 }
                 name => {
-                    let dir = Directory {
+                    let mut dir = Directory {
                         name: name.to_string(),
                         children: vec![],
+                        subdirs: vec![],
                     };
-                    dirs.push(current_dir);
-                    recursive_walk(rest.to_vec(), dir, dirs)
+                    println!("In {}, Going down to {}", current_dir.name, dir.name);
+                    recursive_walk(rest.to_vec(), &mut dir);
+                    current_dir.subdirs.push(dir);
                 }
             },
-            ["dir", _] => recursive_walk(rest.to_vec(), current_dir, dirs),
+            ["dir", _] => recursive_walk(rest.to_vec(), current_dir),
             [size, name] => {
                 current_dir.children.push(File {
                     name: name.to_string(),
                     size: size.parse().unwrap(),
                 });
-                recursive_walk(rest.to_vec(), current_dir, dirs)
+                println!("In {}, adding file {}", current_dir.name, name);
+                recursive_walk(rest.to_vec(), current_dir)
             }
             _ => panic!("Invalid line"),
         },
-        _ => 0,
+        _ => return,
     }
 }
 
 fn part1(mut lines: Vec<String>) -> u32 {
-    let mut dirs: Vec<Directory> = Vec::new();
     let first = lines.remove(0);
     if first.ne("$ cd /") {
         panic!("Does not start with /");
     }
-    let current_dir: Directory = Directory {
+    let mut root: Directory = Directory {
         name: "/".to_string(),
         children: vec![],
+        subdirs: vec![],
     };
-    recursive_walk(lines, current_dir, &mut dirs);
+    recursive_walk(lines, &mut root);
 
-    println!("{:?}", dirs);
+    println!("{}", root.print(0));
+
+    println!("{:?}", root);
     0
 }
 
@@ -115,10 +151,30 @@ mod tests {
         "7214296 k",
     ];
 
+    static EXAMPLE2: [&str; 11] = [
+        "$ cd /",
+        "$ ls",
+        "dir a",
+        "111 r.txt",
+        "$ cd a",
+        "$ cd b",
+        "$ ls",
+        "222 b.txt",
+        "$ cd ..",
+        "$ ls",
+        "333 a.txt",
+    ];
+
     #[test]
     fn example_cases_part1() {
         let result = part1(EXAMPLE.iter().map(|l| String::from(*l)).collect());
         assert_eq!(result, 95437);
+    }
+
+    #[test]
+    fn example_cases_part1_2() {
+        let result = part1(EXAMPLE2.iter().map(|l| String::from(*l)).collect());
+        assert_eq!(result, 0);
     }
 
     #[test]
