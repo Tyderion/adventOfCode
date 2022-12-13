@@ -33,8 +33,8 @@ struct File {
 impl File {
     fn print(&self, level: usize) -> String {
         format!(
-            "{}- {} (file, size={})",
-            " ".repeat(level),
+            "\n{}- {} (file, size={})",
+            "  ".repeat(level),
             self.name,
             self.size
         )
@@ -43,74 +43,62 @@ impl File {
 
 impl Directory {
     fn print(&self, level: usize) -> String {
-        let indent = "  ".repeat(level + 1);
+        let indent = "  ".repeat(level);
         let dirs = match self.subdirs.len() {
             0 => "".to_string(),
             _ => format!(
-                "\n{}{}",
-                indent,
+                "{}",
                 self.subdirs
                     .iter()
                     .map(|child| child.print(level + 1))
                     .collect::<Vec<String>>()
-                    .join(&format!("\n{}", indent))
+                    .join(&indent)
             ),
         };
         let children = match self.children.len() {
             0 => "".to_string(),
             _ => format!(
-                "\n{}{}",
-                indent,
+                "{}",
                 self.children
                     .iter()
                     .map(|child| child.print(level + 1))
                     .collect::<Vec<String>>()
-                    .join(&format!("\n{}", indent))
+                    .join(&indent)
             ),
         };
-        format!("- {} (dir) {} {}", self.name, children, dirs)
+        format!("\n{}- {} (dir){}{}", indent, self.name, children, dirs)
     }
 }
 
-fn recursive_walk(lines: Vec<String>, current_dir: &mut Directory) -> usize {
-    match lines.as_slice() {
-        [line, rest @ ..] => match line.split(" ").collect::<Vec<&str>>().as_slice() {
-            ["$", "ls"] => recursive_walk(rest.to_vec(), current_dir) + 1,
-            ["$", "cd", name] => match name {
-                &".." => {
-                    println!("going back up from {}", current_dir.name);
-                    1
-                }
-                name => {
-                    let mut dir = Directory {
-                        name: name.to_string(),
-                        children: vec![],
-                        subdirs: vec![],
-                    };
-                    println!("In {}, Going down to {}", current_dir.name, dir.name);
-                    let mut eaten = recursive_walk(rest.to_vec(), &mut dir);
-                    loop {
-                        eaten += recursive_walk(rest[eaten..].to_vec(), current_dir);
-                        if eaten == rest.len() {
-                            current_dir.subdirs.push(dir);
-                            return eaten + 1;
-                        }
-                    }
-                }
-            },
-            ["dir", _] => recursive_walk(rest.to_vec(), current_dir) + 1,
-            [size, name] => {
-                current_dir.children.push(File {
-                    name: name.to_string(),
-                    size: size.parse().unwrap(),
-                });
-                println!("In {}, adding file {}", current_dir.name, name);
-                1 + recursive_walk(rest.to_vec(), current_dir)
-            }
-            _ => panic!("Invalid line"),
-        },
-        _ => 0,
+fn recursive_walk<'a>(mut lines: VecDeque<&'a str>, current_dir: &mut Directory) -> VecDeque<&'a str> {
+    while let Some(line) = lines.pop_front() {
+        if line.starts_with("$ cd ..") {
+           return lines.clone();
+        }
+        else if line.starts_with("$ ls") {
+            continue;
+        } else if let ["$", "cd", name] = line.split(" ").collect::<Vec<&str>>().as_slice() {
+            let mut dir = Directory {
+                name: name.to_string(),
+                children: vec![],
+                subdirs: vec![],
+            };
+            println!("In {}, Going down to {}", current_dir.name, dir.name);
+            lines = recursive_walk(lines.clone(), &mut dir);
+            current_dir.subdirs.push(dir);
+        } else if line.starts_with("dir") {
+            continue;
+        }
+        else if let [size, name] = line.split(" ").collect::<Vec<&str>>().as_slice(){
+            current_dir.children.push(File {
+                name: name.to_string(),
+                size: size.parse().unwrap(),
+            });
+            println!("In {}, adding file {}", current_dir.name, name);
+            continue;
+        }
     }
+    lines.clone()
 }
 
 fn part1(mut lines: Vec<String>) -> u32 {
@@ -123,7 +111,7 @@ fn part1(mut lines: Vec<String>) -> u32 {
         children: vec![],
         subdirs: vec![],
     };
-    recursive_walk(lines, &mut root);
+    recursive_walk(VecDeque::from_iter(lines.iter().map(|s| s.as_str())), &mut root);
 
     println!("{}", root.print(0));
 
@@ -185,6 +173,38 @@ mod tests {
     fn example_cases_part1_2() {
         let result = part1(EXAMPLE2.iter().map(|l| String::from(*l)).collect());
         assert_eq!(result, 0);
+    }
+
+    #[test]
+    fn example_print() {
+        let mut root = Directory {
+            subdirs: vec![],
+            children: vec![],
+            name: "/".to_string()
+        };
+        root.children.push(File {
+            name: "a.txt".to_string(),
+            size: 111
+        });
+        root.children.push(File {
+            name: "b.txt".to_string(),
+            size: 222
+        });
+
+        let mut subdir = Directory {
+            subdirs: vec![],
+            children: vec![],
+            name: "dirname".to_string()
+        };
+        subdir.children.push(File {
+            name: "c.txt".to_string(),
+            size: 333
+        });
+        
+        root.subdirs.push(subdir);
+
+        println!("{}", root.print(0));
+        assert!(false)
     }
 
     #[test]
