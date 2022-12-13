@@ -3,7 +3,7 @@ use std::{
     fmt::Display,
     panic,
     thread::current,
-    vec,
+    vec, cmp::Reverse,
 };
 
 fn main() {
@@ -68,6 +68,22 @@ impl Directory {
         };
         format!("\n{}- {} (dir){}{}", indent, self.name, children, dirs)
     }
+
+    fn size(&self) -> u32 {
+        self.children.iter().map(|f| f.size).sum::<u32>() + self.subdirs.iter().map(|d| d.size()).sum::<u32>()
+    }
+
+    fn collect_subdirs(&self) -> Vec<Directory> {
+        let mut child_dirs = self.subdirs.iter().flat_map(|d| d.collect_subdirs()).collect::<Vec<Directory>>();
+        child_dirs.push(self.clone());
+        child_dirs
+    }
+}
+
+impl Display for Directory {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.print(0))
+    }
 }
 
 fn recursive_walk<'a>(mut lines: VecDeque<&'a str>, current_dir: &mut Directory) -> VecDeque<&'a str> {
@@ -83,7 +99,7 @@ fn recursive_walk<'a>(mut lines: VecDeque<&'a str>, current_dir: &mut Directory)
                 children: vec![],
                 subdirs: vec![],
             };
-            println!("In {}, Going down to {}", current_dir.name, dir.name);
+            // println!("In {}, Going down to {}", current_dir.name, dir.name);
             lines = recursive_walk(lines.clone(), &mut dir);
             current_dir.subdirs.push(dir);
         } else if line.starts_with("dir") {
@@ -94,7 +110,7 @@ fn recursive_walk<'a>(mut lines: VecDeque<&'a str>, current_dir: &mut Directory)
                 name: name.to_string(),
                 size: size.parse().unwrap(),
             });
-            println!("In {}, adding file {}", current_dir.name, name);
+            // println!("In {}, adding file {}", current_dir.name, name);
             continue;
         }
     }
@@ -113,14 +129,28 @@ fn part1(mut lines: Vec<String>) -> u32 {
     };
     recursive_walk(VecDeque::from_iter(lines.iter().map(|s| s.as_str())), &mut root);
 
-    println!("{}", root.print(0));
-
-    println!("{:?}", root);
-    0
+    println!("{}", root);
+    root.collect_subdirs().iter().map(|d|  d.size()).filter(|s| *s < 100000 as u32).sum::<u32>()
 }
 
-fn part2<T: AsRef<str>>(_lines: Vec<T>) -> u32 {
-    todo!()
+fn part2(mut lines: Vec<String>) -> u32 {
+    const AVAILABLE_SPACE: u32 = 70000000 as u32;
+    const NEEDED_SPACE: u32 = 30000000 as u32;
+    let first = lines.remove(0);
+    if first.ne("$ cd /") {
+        panic!("Does not start with /");
+    }
+    let mut root: Directory = Directory {
+        name: "/".to_string(),
+        children: vec![],
+        subdirs: vec![],
+    };
+    recursive_walk(VecDeque::from_iter(lines.iter().map(|s| s.as_str())), &mut root);
+    let used = root.size();
+    let to_delete = NEEDED_SPACE - (AVAILABLE_SPACE - used);
+    let mut directories_big_enough = root.collect_subdirs().iter().map(|d|  d.size()).filter(|s| *s > to_delete).collect::<Vec<u32>>();
+    directories_big_enough.sort();
+    *directories_big_enough.first().unwrap()
 }
 
 #[cfg(test)]
@@ -209,7 +239,7 @@ mod tests {
 
     #[test]
     fn example_cases_part2() {
-        let result = part2(EXAMPLE.to_vec());
-        assert_eq!(result, todo!());
+        let result = part2(EXAMPLE.iter().map(|l| String::from(*l)).collect());
+        assert_eq!(result, 24933642);
     }
 }
