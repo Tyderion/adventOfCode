@@ -18,25 +18,23 @@ fn main() {
 }
 
 fn part1<T: AsRef<str>>(lines: Vec<T>) -> usize {
-    let snake: Vec<Position> = iter::repeat(Position(0, 0)).take(2).collect();
-    run_simulation(lines, snake)
+    let rope: Vec<Position> = iter::repeat(Position(0, 0)).take(2).collect();
+    run_simulation(lines, rope)
 }
 
 fn part2<T: AsRef<str>>(lines: Vec<T>) -> usize {
-    let snake: Vec<Position> = iter::repeat(Position(0, 0)).take(10).collect();
-    run_simulation(lines, snake)
+    let rope: Vec<Position> = iter::repeat(Position(0, 0)).take(10).collect();
+    run_simulation(lines, rope)
 }
 
-fn run_simulation<T: AsRef<str>>(lines: Vec<T>, mut snake: Vec<Position>) -> usize {
+fn run_simulation<T: AsRef<str>>(lines: Vec<T>, mut rope: Vec<Position>) -> usize {
     let mut tail_positions = HashSet::new();
     tail_positions.insert(Position(0, 0));
 
     lines
         .iter()
         .map(|str| Move::from(str.as_ref()))
-        .for_each(|move1| {
-            snake = move1.execute_move(snake.as_mut_slice(), &mut tail_positions);
-        });
+        .for_each(|move1| move1.execute(rope.as_mut_slice(), &mut tail_positions));
     tail_positions.len()
 }
 
@@ -72,12 +70,8 @@ impl Move {
         (0..self.1).into_iter().map(|_| self.0).collect()
     }
 
-    fn execute_move(
-        &self,
-        snake: &mut [Position],
-        tail_positions: &mut HashSet<Position>,
-    ) -> Vec<Position> {
-        match snake {
+    fn execute(&self, rope: &mut [Position], tail_positions: &mut HashSet<Position>) {
+        match rope {
             [head, tail @ ..] => {
                 self.spread().into_iter().for_each(|direction| {
                     *head += direction;
@@ -90,7 +84,6 @@ impl Move {
             }
             _ => (),
         }
-        snake.to_vec()
     }
 }
 
@@ -141,7 +134,7 @@ impl Add<PositionDiff> for Position {
                 Position(self.0 - 1, self.1 - 1)
             }
             // if different, just don't move
-            _ => self,
+            _ => panic!("There should never be a difference this big: {:?}", other),
         }
     }
 }
