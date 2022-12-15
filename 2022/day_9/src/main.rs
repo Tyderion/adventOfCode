@@ -18,24 +18,26 @@ fn main() {
 }
 
 fn part1<T: AsRef<str>>(lines: Vec<T>) -> usize {
-    let mut head = Position(0, 0);
-    let mut tail = Position(0, 0);
-    let mut tail_positions = HashSet::new();
-    tail_positions.insert(tail);
+    let snake: Vec<Position> = iter::repeat(Position(0, 0)).take(2).collect();
+    run_simulation(lines, snake)
+}
 
+fn part2<T: AsRef<str>>(lines: Vec<T>) -> usize {
+    let snake: Vec<Position> = iter::repeat(Position(0, 0)).take(10).collect();
+    run_simulation(lines, snake)
+}
+
+fn run_simulation<T: AsRef<str>>(lines: Vec<T>, mut snake: Vec<Position>) -> usize {
+    let mut tail_positions = HashSet::new();
+    tail_positions.insert(Position(0, 0));
 
     lines
         .iter()
         .map(|str| Move::from(str.as_ref()))
         .for_each(|move1| {
-            (head, tail) = move1.execute_move(head, tail, &mut tail_positions);
+            snake = move1.execute_move(snake.as_mut_slice(), &mut tail_positions);
         });
-    tail_positions.len() as usize
-}
-
-fn part2<T: AsRef<str>>(_lines: Vec<T>) -> u32 {
-    // let snake: [Position; 10] = iter::repeat(Position(0,0).take(10);
-    0
+    tail_positions.len()
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -72,16 +74,23 @@ impl Move {
 
     fn execute_move(
         &self,
-        mut head: Position,
-        mut tail: Position,
+        snake: &mut [Position],
         tail_positions: &mut HashSet<Position>,
-    ) -> (Position, Position) {
-        self.spread().into_iter().for_each(|direction| {
-            head += direction;
-            tail += head - tail;
-            tail_positions.insert(tail);
-        });
-        (head, tail)
+    ) -> Vec<Position> {
+        match snake {
+            [head, tail @ ..] => {
+                self.spread().into_iter().for_each(|direction| {
+                    *head += direction;
+                    let last_element = tail.iter_mut().fold(head.clone(), |previous, next| {
+                        *next += previous - *next;
+                        *next
+                    });
+                    tail_positions.insert(last_element);
+                });
+            }
+            _ => (),
+        }
+        snake.to_vec()
     }
 }
 
@@ -112,7 +121,6 @@ impl Add<PositionDiff> for Position {
     type Output = Position;
 
     fn add(self, other: PositionDiff) -> Self::Output {
-        println!("Adding {:?} to {:?}", other, self);
         match other {
             // 2 Steps in the same direction moves in a straight line
             PositionDiff(0, 2) => Position(self.0, self.1 + 1),
@@ -120,12 +128,20 @@ impl Add<PositionDiff> for Position {
             PositionDiff(2, 0) => Position(self.0 + 1, self.1),
             PositionDiff(-2, 0) => Position(self.0 - 1, self.1),
             // not touching moves diagonally
-            PositionDiff(2, 1) | PositionDiff(1, 2) => Position(self.0 + 1, self.1 + 1),
-            PositionDiff(2, -1) | PositionDiff(1, -2) => Position(self.0 + 1, self.1 - 1),
-            PositionDiff(-2, 1) | PositionDiff(-1, 2) => Position(self.0 - 1, self.1 + 1),
-            PositionDiff(-2, -1) | PositionDiff(-1, -2) => Position(self.0 - 1, self.1 - 1),
+            PositionDiff(2, 1) | PositionDiff(1, 2) | PositionDiff(2, 2) => {
+                Position(self.0 + 1, self.1 + 1)
+            }
+            PositionDiff(2, -1) | PositionDiff(1, -2) | PositionDiff(2, -2) => {
+                Position(self.0 + 1, self.1 - 1)
+            }
+            PositionDiff(-2, 1) | PositionDiff(-1, 2) | PositionDiff(-2, 2) => {
+                Position(self.0 - 1, self.1 + 1)
+            }
+            PositionDiff(-2, -1) | PositionDiff(-1, -2) | PositionDiff(-2, -2) => {
+                Position(self.0 - 1, self.1 - 1)
+            }
             // if different, just don't move
-            _ => self
+            _ => self,
         }
     }
 }
@@ -189,12 +205,12 @@ mod tests {
     #[test]
     fn example_case_part1() {
         let result = part1(EXAMPLE.iter().map(|x| String::from(*x)).collect());
-        assert_eq!(result, 13+1);
+        assert_eq!(result, 13);
     }
 
     #[test]
     fn example_case_part2() {
         let result = part2(EXAMPLE.iter().map(|x| String::from(*x)).collect());
-        assert_eq!(result, 0);
+        assert_eq!(result, 1);
     }
 }
