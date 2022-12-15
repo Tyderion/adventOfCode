@@ -1,6 +1,9 @@
 use std::{
+    collections::HashSet,
     fmt::Display,
-    ops::{Add, AddAssign, Sub}, collections::HashSet,
+    iter,
+    ops::{Add, AddAssign, Sub},
+    process::Output,
 };
 
 fn main() {
@@ -20,13 +23,18 @@ fn part1<T: AsRef<str>>(lines: Vec<T>) -> usize {
     let mut tail_positions = HashSet::new();
     tail_positions.insert(tail);
 
-    lines.iter().map(|str| Move::from(str.as_ref())).for_each(|move1| {
-        (head, tail ) = move1.execute_move(head, tail, &mut tail_positions);
-    });
+
+    lines
+        .iter()
+        .map(|str| Move::from(str.as_ref()))
+        .for_each(|move1| {
+            (head, tail) = move1.execute_move(head, tail, &mut tail_positions);
+        });
     tail_positions.len() as usize
 }
 
 fn part2<T: AsRef<str>>(_lines: Vec<T>) -> u32 {
+    // let snake: [Position; 10] = iter::repeat(Position(0,0).take(10);
     0
 }
 
@@ -42,9 +50,10 @@ enum Direction {
 struct Position(i32, i32);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct PositionDiff(i32, i32);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 struct Move(Direction, i32);
-
-
 
 impl Move {
     fn from(str: &str) -> Move {
@@ -61,7 +70,12 @@ impl Move {
         (0..self.1).into_iter().map(|_| self.0).collect()
     }
 
-    fn execute_move(&self, mut head: Position, mut tail: Position, tail_positions: &mut HashSet<Position>) -> (Position, Position) {
+    fn execute_move(
+        &self,
+        mut head: Position,
+        mut tail: Position,
+        tail_positions: &mut HashSet<Position>,
+    ) -> (Position, Position) {
         self.spread().into_iter().for_each(|direction| {
             head += direction;
             tail += head - tail;
@@ -94,37 +108,39 @@ impl Display for Direction {
     }
 }
 
-impl Add for Position {
+impl Add<PositionDiff> for Position {
     type Output = Position;
 
-    fn add(self, other: Position) -> Position {
+    fn add(self, other: PositionDiff) -> Self::Output {
+        println!("Adding {:?} to {:?}", other, self);
         match other {
             // 2 Steps in the same direction moves in a straight line
-            Position(0, 2) => Position(self.0, self.1 + 1),
-            Position(0, -2) => Position(self.0, self.1 - 1),
-            Position(2, 0) => Position(self.0 + 1, self.1),
-            Position(-2, 0) => Position(self.0 - 1, self.1),
+            PositionDiff(0, 2) => Position(self.0, self.1 + 1),
+            PositionDiff(0, -2) => Position(self.0, self.1 - 1),
+            PositionDiff(2, 0) => Position(self.0 + 1, self.1),
+            PositionDiff(-2, 0) => Position(self.0 - 1, self.1),
             // not touching moves diagonally
-            Position(2, 1) | Position(1, 2) => Position(self.0 + 1, self.1 + 1),
-            Position(2, -1) | Position(1, -2)  => Position(self.0 + 1, self.1 - 1),
-            Position(-2, 1) | Position(-1, 2)  => Position(self.0 - 1, self.1 + 1),
-            Position(-2, -1) | Position(-1, -2) => Position(self.0 - 1, self.1 - 1),
+            PositionDiff(2, 1) | PositionDiff(1, 2) => Position(self.0 + 1, self.1 + 1),
+            PositionDiff(2, -1) | PositionDiff(1, -2) => Position(self.0 + 1, self.1 - 1),
+            PositionDiff(-2, 1) | PositionDiff(-1, 2) => Position(self.0 - 1, self.1 + 1),
+            PositionDiff(-2, -1) | PositionDiff(-1, -2) => Position(self.0 - 1, self.1 - 1),
+            // if different, just don't move
             _ => self
         }
     }
 }
 
-impl AddAssign for Position {
-    fn add_assign(&mut self, rhs: Position) {
+impl AddAssign<PositionDiff> for Position {
+    fn add_assign(&mut self, rhs: PositionDiff) {
         *self = *self + rhs;
     }
 }
 
 impl Sub for Position {
-    type Output = Position;
+    type Output = PositionDiff;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Position(self.0 - rhs.0, self.1 - rhs.1)
+        PositionDiff(self.0 - rhs.0, self.1 - rhs.1)
     }
 }
 
@@ -173,7 +189,7 @@ mod tests {
     #[test]
     fn example_case_part1() {
         let result = part1(EXAMPLE.iter().map(|x| String::from(*x)).collect());
-        assert_eq!(result, 13);
+        assert_eq!(result, 13+1);
     }
 
     #[test]
