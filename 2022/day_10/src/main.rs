@@ -1,6 +1,5 @@
 use std::vec;
 
-
 fn main() {
     let filename = "day_10/src/input.txt";
     let lines = fileutils::lines_from_file(filename);
@@ -9,96 +8,90 @@ fn main() {
     println!("Instructions Part1: {} Total Frequency", part1_result);
 
     let part2_result = part2(lines.clone());
-    // ZKGRKGRK
     println!("Part2: \n{}", part2_result.join("\n"));
 }
 
 fn part1<T: AsRef<str>>(lines: Vec<T>) -> i32 {
-    let mut cycle = 1;
-    let mut register = 1;
     let mut total_frequency = 0;
-    lines.iter().for_each(|l| {
-        let mut instruction = Instruction::from(l.as_ref());
-        loop {
-            if cycle == 20 || cycle == 60 || cycle == 100 || cycle == 140 || cycle == 180 ||  cycle == 220{
-                total_frequency += register * cycle;
-            }
-            let result = instruction.execute(register);
-            cycle += 1;
-            if result.is_none() {
-                continue;
-            }
-            register = result.unwrap();
-            break;
+    let instructions = lines
+        .iter()
+        .map(|l| Instruction::from(l.as_ref()))
+        .collect::<Vec<Instruction>>();
+
+    run_instructions(instructions, |cycle: i32, register: i32| {
+        if (cycle - 20) % 40 == 0 {
+            total_frequency += register * cycle;
         }
-        
     });
     total_frequency
 }
 
-fn try_flush(current_line: &mut Vec<String>, screen: &mut Vec<String>) {
-    if current_line.len() == 40 {
-        screen.push(current_line.join(""));
-        *current_line = vec![];
-    }
-}
-
 fn part2<T: AsRef<str>>(lines: Vec<T>) -> Vec<String> {
-    let mut cycle = 0;
-    let mut register = 1;
-    let mut current_screen: Vec<String> = vec![];
+    let mut screen_line: Vec<String> = vec![];
     let mut screen: Vec<String> = vec![];
-    lines.iter().for_each(|l| {
-        let mut instruction = Instruction::from(l.as_ref());
-        loop {
-            if cycle % 40 == 0{
-                try_flush(&mut current_screen, &mut screen);
-            }
-            let result = instruction.execute(register);
-            let sprite_position = register % 40;
-            if (sprite_position-1..=sprite_position+1).contains(&(cycle % 40)){
-                current_screen.push("#".to_string());
-            } else {
-                // print " " instead of "." for readability
-                current_screen.push(" ".to_string());
-            }
-            cycle += 1;
-            if result.is_none() {
-                continue;
-            }
-            register = result.unwrap();
-            if cycle % 40 == 0{
-                try_flush(&mut current_screen, &mut screen);
-            }
-            break;
+    let instructions = lines
+        .iter()
+        .map(|l| Instruction::from(l.as_ref()))
+        .collect::<Vec<Instruction>>();
+
+    run_instructions(instructions, |cycle: i32, register: i32| {
+        let sprite_position = register % 40;
+        let sprite_range = sprite_position - 1..=sprite_position + 1;
+        // cycle - 1 because the first cycle is 1 but the first position is 0
+        if sprite_range.contains(&((cycle - 1) % 40)) {
+            screen_line.push("#".to_string());
+        } else {
+            screen_line.push(" ".to_string());
         }
-        
+        if screen_line.len() == 40 {
+            screen.push(screen_line.join(""));
+            screen_line = vec![];
+        }
     });
     screen
 }
 
+fn run_instructions<F>(mut instructions: Vec<Instruction>, mut cycle_callback: F)
+where
+    F: FnMut(i32, i32) -> (),
+{
+    let mut cycle = 0;
+    let mut register = 1;
+    instructions.iter_mut().for_each(|instruction| loop {
+        cycle += 1;
+        cycle_callback(cycle, register);
+        match instruction.execute(register) {
+            Some(result) => {
+                register = result;
+                break;
+            }
+            None => (),
+        }
+    });
+}
+
 struct Instruction {
     operation: Operation,
-    cycles: u32
+    cycles: u32,
 }
 
 enum Operation {
     Add(i32),
-    Noop
+    Noop,
 }
 
 impl Instruction {
     fn from(str: &str) -> Instruction {
         match str.split(" ").collect::<Vec<&str>>()[..] {
             ["addx", register] => Instruction {
-                operation: Operation::Add( register.parse::<i32>().unwrap()),
-                cycles: 2
+                operation: Operation::Add(register.parse::<i32>().unwrap()),
+                cycles: 2,
             },
             ["noop"] => Instruction {
                 operation: Operation::Noop,
-                cycles: 1
+                cycles: 1,
             },
-            _ => panic!("Unknown instruction: {}", str)
+            _ => panic!("Unknown instruction: {}", str),
         }
     }
 
@@ -110,7 +103,7 @@ impl Instruction {
                 }
                 self.cycles -= 1;
                 if self.cycles == 0 {
-                    return Some(register + value)
+                    return Some(register + value);
                 }
                 None
             }
@@ -118,34 +111,24 @@ impl Instruction {
                 // println!("Start of Operation: Noop");
                 self.cycles -= 1;
                 if self.cycles == 0 {
-                    return Some(register)
+                    return Some(register);
                 }
                 None
             }
-        }
+        };
     }
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const EXAMPLE: [&str; 3] = [
-        "noop",
-        "addx 3",
-        "addx -5"
-    ];
-
     fn example_input() -> Vec<String> {
         let filename = "src/example.txt";
-        fileutils::lines_from_file(filename)
-    }
-
-    #[test]
-    fn example() {
-        let result = part1(EXAMPLE.iter().map(|str| str.to_string()).collect());
-        assert_eq!(result, 1);
+        match fileutils::safe_lines_from_file(filename) {
+            Some(lines) => lines,
+            _ => fileutils::lines_from_file("day_10/".to_string() + filename),
+        }
     }
 
     #[test]
@@ -158,6 +141,15 @@ mod tests {
     fn example_case_part2() {
         // Cannot be tested as it draws letters on the command line
         let result = part2(example_input());
-        println!("{}", result.join("\n"));
+        assert_eq!(
+            r"##..##..##..##..##..##..##..##..##..##..
+###...###...###...###...###...###...###.
+####....####....####....####....####....
+#####.....#####.....#####.....#####.....
+######......######......######......####
+#######.......#######.......#######....."
+                .to_string(),
+            result.join("\n")
+        )
     }
 }
