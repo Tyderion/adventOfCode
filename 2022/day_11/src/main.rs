@@ -1,3 +1,12 @@
+use std::{iter::Map, collections::HashMap};
+
+use monkey::MonkeyId;
+
+use crate::monkey::Monkey;
+
+mod monkey;
+mod operation;
+
 fn main() {
     let filename = "day_10/src/input.txt";
     let lines = fileutils::lines_from_file(filename);
@@ -9,8 +18,17 @@ fn main() {
     println!("Part2: ??{}", part2_result);
 }
 
+fn parse_monkeys<T: AsRef<str>>(lines: Vec<T>) -> HashMap<MonkeyId, Monkey> {
+    lines
+    .chunks(7)
+    .map(|chunk| Monkey::from(chunk.iter().map(|s| s.as_ref()).filter(|s| !s.is_empty()).collect()))
+    .map(|monkey| (monkey.id, monkey))
+    .collect()
+}
+
 fn part1<T: AsRef<str>>(lines: Vec<T>) -> i32 {
-    todo!()
+    let monkeys = parse_monkeys(lines);
+    0
 }
 
 fn part2<T: AsRef<str>>(lines: Vec<T>) -> i32 {
