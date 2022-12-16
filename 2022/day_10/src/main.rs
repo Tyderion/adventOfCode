@@ -9,6 +9,7 @@ fn main() {
     println!("Instructions Part1: {} Total Frequency", part1_result);
 
     let part2_result = part2(lines.clone());
+    // ZKGRKGRK
     println!("Part2: \n{}", part2_result.join("\n"));
 }
 
@@ -20,7 +21,6 @@ fn part1<T: AsRef<str>>(lines: Vec<T>) -> i32 {
         let mut instruction = Instruction::from(l.as_ref());
         loop {
             if cycle == 20 || cycle == 60 || cycle == 100 || cycle == 140 || cycle == 180 ||  cycle == 220{
-                println!("register is {} at cycle {} totalling {}", register, cycle,  register * cycle);
                 total_frequency += register * cycle;
             }
             let result = instruction.execute(register);
@@ -33,7 +33,6 @@ fn part1<T: AsRef<str>>(lines: Vec<T>) -> i32 {
         }
         
     });
-    println!("Finished after {} cycles with register {}", cycle, register);
     total_frequency
 }
 
@@ -52,33 +51,29 @@ fn part2<T: AsRef<str>>(lines: Vec<T>) -> Vec<String> {
     lines.iter().for_each(|l| {
         let mut instruction = Instruction::from(l.as_ref());
         loop {
-            if cycle % 40 == 0 && current_screen.len() == 40 {
-                println!("register is {} at cycle {}", register, cycle);
-                screen.push(current_screen.join(""));
-                current_screen = vec![];
+            if cycle % 40 == 0{
+                try_flush(&mut current_screen, &mut screen);
             }
             let result = instruction.execute(register);
             let sprite_position = register % 40;
             if (sprite_position-1..=sprite_position+1).contains(&(cycle % 40)){
                 current_screen.push("#".to_string());
             } else {
-                current_screen.push(".".to_string());
+                // print " " instead of "." for readability
+                current_screen.push(" ".to_string());
             }
             cycle += 1;
             if result.is_none() {
                 continue;
             }
             register = result.unwrap();
-            if cycle % 40 == 0 && current_screen.len() == 40 {
-                println!("register is {} at cycle {}", register, cycle);
-                screen.push(current_screen.join(""));
-                current_screen = vec![];
+            if cycle % 40 == 0{
+                try_flush(&mut current_screen, &mut screen);
             }
             break;
         }
         
     });
-    println!("Finished after {} cycles with register {}", cycle, register);
     screen
 }
 
@@ -143,7 +138,7 @@ mod tests {
     ];
 
     fn example_input() -> Vec<String> {
-        let filename = "day_10/src/example.txt";
+        let filename = "src/example.txt";
         fileutils::lines_from_file(filename)
     }
 
