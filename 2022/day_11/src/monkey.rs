@@ -1,3 +1,5 @@
+use std::{collections::HashMap, vec};
+
 use crate::operation::Operation;
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -15,9 +17,12 @@ impl MonkeyId {
         }
         panic!("Invalid monkey id: {}", input.as_ref());
     }
+    pub fn new(id: i32) -> MonkeyId {
+        MonkeyId(id)
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Monkey {
     pub id: MonkeyId,
     items: Vec<i32>,
@@ -78,7 +83,7 @@ impl Monkey {
         panic!("Invalid test: {}", input.as_ref());
     }
 
-    pub fn inspect(&mut self) -> Vec<(MonkeyId, i32)> {
+    pub fn inspect_mut(&mut self) -> Vec<(MonkeyId, i32)> {
         let result = self.items.iter_mut().map(|item| {
             self.inspections += 1;
             // Inspection increases worry level
@@ -95,11 +100,53 @@ impl Monkey {
         result
     }
 
-    pub fn catch_item(&mut self, item: i32) {
+    pub fn inspect(&self) -> (Monkey, Vec<(MonkeyId, i32)>) {
+
+        let mut inspections = self.inspections;
+        let result = self.items.iter().map(|item| {
+            inspections += 1;
+            // Inspection increases worry level
+            let new_item = self.operation.apply(*item) / 3;
+            if new_item % self.test == 0 {
+                (self.if_true, new_item)
+            } else {
+                (self.if_false, new_item)
+            }
+        }).collect();
+        (Monkey {
+            id: self.id,
+            inspections,
+            items: vec![],
+            if_false: self.if_false,
+            if_true: self.if_true,
+            operation: self.operation,
+            test: self.test,
+        }, result)
+    }
+
+    pub fn catch_item_mut(&mut self, item: i32) {
         self.items.push(item);
+    }
+
+    pub fn catch_item(self, item: i32) -> Self {
+        let mut new_items = self.items.clone();
+        new_items.push(item);
+        Monkey {
+            id: self.id,
+            inspections: self.inspections,
+            items: new_items,
+            if_false: self.if_false,
+            if_true: self.if_true,
+            operation: self.operation,
+            test: self.test,
+        }
     }
 
     pub fn get_inspection_count(&self) -> i32 {
         self.inspections
+    }
+
+    pub fn get_items(&self) -> Vec<i32> {
+        self.items.clone()
     }
 }
