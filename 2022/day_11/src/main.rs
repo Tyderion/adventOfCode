@@ -1,7 +1,4 @@
-use std::{
-    collections::{BTreeMap, HashMap},
-    iter::{Map, Rev},
-};
+use std::collections::{BTreeMap};
 
 use monkey::MonkeyId;
 
@@ -37,6 +34,13 @@ fn parse_monkeys<T: AsRef<str>>(lines: Vec<T>) -> BTreeMap<MonkeyId, Monkey> {
         .collect()
 }
 
+fn print_monkeys(header: String, monkeys: Box<BTreeMap::<MonkeyId, Monkey>>) {
+    println!("{}", header);
+    for monkey in monkeys.values() {
+        println!("Monkey {:?}", monkey);
+    }
+}
+
 fn do_turn(id: MonkeyId, monkeys: BTreeMap::<MonkeyId, Monkey>) -> BTreeMap::<MonkeyId, Monkey> {
     let mut new_monkeys = BTreeMap::<MonkeyId, Monkey>::new();
     let monkey = monkeys.get(&id).unwrap();
@@ -54,6 +58,7 @@ fn do_turn(id: MonkeyId, monkeys: BTreeMap::<MonkeyId, Monkey>) -> BTreeMap::<Mo
             new_monkeys.insert(mk.id, mk);
         }
     }
+    print_monkeys(format!("After turn {:?}", id), Box::new(new_monkeys.clone()));
     new_monkeys
 }
 
@@ -62,18 +67,14 @@ fn do_round(round: i32, ids: Vec<&MonkeyId>, monkeys: BTreeMap::<MonkeyId, Monke
     for id in ids {
         new_monkeys = do_turn(*id, new_monkeys);
     }
-    // println!("--- after round {} ---", round);
-    // for monkey in new_monkeys.values() {
-    //     println!("Monkey {:?}", monkey);
-    // }
+    print_monkeys(format!("After Round {}", round), Box::new(new_monkeys.clone()));
     new_monkeys
 }
 
 fn part1<T: AsRef<str>>(lines: Vec<T>) -> i32 {
     let monkeys = parse_monkeys(lines);
-    // for monkey in monkeys.values() {
-    //     println!("Monkey {:?}", monkey);
-    // }
+
+    print_monkeys(format!("Initial state"), Box::new(monkeys.clone()));
     let ids = monkeys.keys().collect::<Vec<_>>();
 
     let mut new_monkeys = monkeys.clone();
@@ -84,12 +85,10 @@ fn part1<T: AsRef<str>>(lines: Vec<T>) -> i32 {
     all_inspections.sort();
     all_inspections.reverse();
 
-    // println!("all_inspections: {:?}", all_inspections);
-
     all_inspections.iter().take(2).fold(1, |a, b| a * b)
 }
 
-fn part2<T: AsRef<str>>(lines: Vec<T>) -> i32 {
+fn part2<T: AsRef<str>>(_lines: Vec<T>) -> i32 {
     todo!()
 }
 
@@ -106,22 +105,6 @@ mod tests {
         }
     }
 
-    // #[test]
-    // fn example_monkey0_turn1() {
-    //     let mut monkeys = parse_monkeys(example_input());
-    //     let monkey0 = monkeys.get_mut(&MonkeyId::new(0)).unwrap();
-    //     let result = monkey0.inspect();
-    //     for (id, item) in result.iter() {
-    //         monkeys.get_mut(id).unwrap().catch_item(*item);
-    //     }
-    //     assert_eq!(monkey0.get_items()[..], []);
-    //     for (id, monkey) in monkeys {
-    //         if id == MonkeyId::new(3) {
-    //             assert_eq!(monkey.get_items()[..], [74, 500, 620]);
-    //         }
-    //     }
-    // }
-
     #[test]
     fn example_case_part1() {
         let result = part1(example_input());
@@ -130,7 +113,6 @@ mod tests {
 
     #[test]
     fn example_case_part2() {
-        // Cannot be tested as it draws letters on the command line
         let result = part2(example_input());
         assert_eq!(result, 2);
     }
