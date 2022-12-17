@@ -3,9 +3,9 @@ use regex::Regex;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Operation {
-    Add(u128),
+    Add(u64),
     AddOld,
-    Multiply(u128),
+    Multiply(u64),
     MultiplyOld,
 }
 
@@ -20,11 +20,11 @@ impl Operation {
             return match op {
                 "*" => match num {
                     "old" => Some(Operation::MultiplyOld),
-                    _ => Some(Operation::Multiply(num.parse::<u128>().unwrap())),
+                    _ => Some(Operation::Multiply(num.parse::<u64>().unwrap())),
                 },
                 "+" => match num {
                     "old" => Some(Operation::AddOld),
-                    _ => Some(Operation::Add(num.parse::<u128>().unwrap())),
+                    _ => Some(Operation::Add(num.parse::<u64>().unwrap())),
                 },
                 _ => panic!("Unknown operation: {}", operation.as_ref()),
             };
@@ -32,7 +32,7 @@ impl Operation {
         None
     }
 
-    pub fn apply(&self, old: u128) -> u128 {
+    pub fn apply(&self, old: u64) -> u64 {
         match self {
             Operation::Add(num) => old + num,
             Operation::AddOld => old + old,

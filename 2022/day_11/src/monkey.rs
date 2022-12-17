@@ -22,12 +22,12 @@ impl MonkeyId {
 #[derive(Debug, Clone)]
 pub struct Monkey {
     pub id: MonkeyId,
-    items: Vec<u128>,
+    items: Vec<u64>,
     operation: Operation,
-    pub test: u128,
+    pub test: u64,
     if_true: MonkeyId,
     if_false: MonkeyId,
-    inspections: u128,
+    inspections: u64,
 }
 
 impl Monkey {
@@ -53,7 +53,7 @@ impl Monkey {
         }
     }
 
-    fn parse_items<T: AsRef<str>>(input: T) -> Vec<u128> {
+    fn parse_items<T: AsRef<str>>(input: T) -> Vec<u64> {
         lazy_static! {
             static ref RE: Regex = Regex::new(r"^\s+Starting items: ((?:\d+(?:, )?)+)$").unwrap();
         }
@@ -64,23 +64,24 @@ impl Monkey {
                 .unwrap()
                 .as_str()
                 .split(",")
-                .map(|i| i.trim().parse::<u128>().unwrap())
+                .map(|i| i.trim().parse::<u64>().unwrap())
                 .collect();
         }
         vec![]
     }
 
-    fn parse_test<T: AsRef<str>>(input: T) -> u128 {
+    fn parse_test<T: AsRef<str>>(input: T) -> u64 {
         lazy_static! {
             static ref RE: Regex = Regex::new(r"^\s+Test: divisible by (\d+)$").unwrap();
         }
         if let Some(capture) = RE.captures(input.as_ref()) {
-            return capture.get(1).unwrap().as_str().parse::<u128>().unwrap();
+            return capture.get(1).unwrap().as_str().parse::<u64>().unwrap();
         }
         panic!("Invalid test: {}", input.as_ref());
     }
 
-    pub fn inspect(&self, worry_decrease_factor: u128, common_multiple: u128) -> (Monkey, Vec<(MonkeyId, u128)>) {
+    pub fn inspect<F>(&self, worry_decrease: &mut F) -> (Monkey, Vec<(MonkeyId, u64)>)
+    where F: FnMut(u64) -> u64 {
         let mut inspections = self.inspections;
         let result = self
             .items
@@ -88,7 +89,7 @@ impl Monkey {
             .map(|item| {
                 inspections += 1;
                 // Inspection increases worry level
-                let new_item = (self.operation.apply(*item) / worry_decrease_factor) % common_multiple;
+                let new_item = worry_decrease(self.operation.apply(*item));
                 if new_item % self.test == 0 {
                     (self.if_true, new_item)
                 } else {
@@ -110,7 +111,7 @@ impl Monkey {
         )
     }
 
-    pub fn catch_item(self, item: u128) -> Self {
+    pub fn catch_item(self, item: u64) -> Self {
         let mut new_items = self.items.clone();
         new_items.push(item);
         Monkey {
@@ -124,7 +125,7 @@ impl Monkey {
         }
     }
 
-    pub fn get_inspection_count(&self) -> u128 {
+    pub fn get_inspection_count(&self) -> u64 {
         self.inspections
     }
 }

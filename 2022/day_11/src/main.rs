@@ -34,22 +34,24 @@ fn parse_monkeys<T: AsRef<str>>(lines: Vec<T>) -> BTreeMap<MonkeyId, Monkey> {
         .collect()
 }
 
-fn print_monkeys(header: String, monkeys: Box<BTreeMap<MonkeyId, Monkey>>) {
+fn print_monkeys(_header: String, _monkeys: Box<BTreeMap<MonkeyId, Monkey>>) {
     // println!("{}", header);
     // for monkey in monkeys.values() {
     //     println!("Monkey {:?}", monkey);
     // }
 }
 
-fn do_turn(
+fn do_turn<F>(
     id: MonkeyId,
     monkeys: BTreeMap<MonkeyId, Monkey>,
-    worry_decrease_factor: u128,
-    common_multiple: u128,
-) -> BTreeMap<MonkeyId, Monkey> {
+    worry_decrease: &mut F,
+) -> BTreeMap<MonkeyId, Monkey>
+where
+    F: FnMut(u64) -> u64,
+{
     let mut new_monkeys = BTreeMap::<MonkeyId, Monkey>::new();
     let monkey = monkeys.get(&id).unwrap();
-    let (mk, result) = monkey.inspect(worry_decrease_factor, common_multiple);
+    let (mk, result) = monkey.inspect(worry_decrease);
 
     new_monkeys.insert(mk.id, mk);
     for (other_id, monkey) in monkeys {
@@ -70,16 +72,18 @@ fn do_turn(
     new_monkeys
 }
 
-fn do_round(
+fn do_round<F>(
     round: i32,
     ids: Vec<&MonkeyId>,
     monkeys: BTreeMap<MonkeyId, Monkey>,
-    worry_decrease_factor: u128,
-    common_multiple: u128,
-) -> BTreeMap<MonkeyId, Monkey> {
+    worry_decrease: &mut F,
+) -> BTreeMap<MonkeyId, Monkey>
+where
+    F: FnMut(u64) -> u64,
+{
     let mut new_monkeys = monkeys.clone();
     for id in ids {
-        new_monkeys = do_turn(*id, new_monkeys, worry_decrease_factor, common_multiple);
+        new_monkeys = do_turn(*id, new_monkeys, worry_decrease);
     }
     print_monkeys(
         format!("After Round {}", round),
@@ -88,44 +92,48 @@ fn do_round(
     new_monkeys
 }
 
-fn get_monkey_business(monkeys: BTreeMap<MonkeyId, Monkey>) -> u128 {
+fn do_n_rounds<F>(
+    count: i32,
+    monkeys: BTreeMap<MonkeyId, Monkey>,
+    worry_decrease: &mut F,
+) -> BTreeMap<MonkeyId, Monkey>
+where
+    F: FnMut(u64) -> u64,
+{
+    print_monkeys(format!("Initial state"), Box::new(monkeys.clone()));
+    let ids = monkeys.keys().collect::<Vec<_>>();
+    let mut new_monkeys = monkeys.clone();
+    for i in 1..=count {
+        new_monkeys = do_round(i, ids.clone(), new_monkeys, worry_decrease);
+    }
+    new_monkeys
+}
+
+fn get_monkey_business(monkeys: BTreeMap<MonkeyId, Monkey>) -> u64 {
     let mut all_inspections = monkeys
         .values()
         .map(|m| m.get_inspection_count())
-        .collect::<Vec<u128>>();
+        .collect::<Vec<u64>>();
     all_inspections.sort();
     all_inspections.reverse();
 
     all_inspections.iter().take(2).fold(1, |a, b| a * b)
 }
 
-fn part1<T: AsRef<str>>(lines: Vec<T>) -> u128 {
-    let monkeys = parse_monkeys(lines);
-
-    print_monkeys(format!("Initial state"), Box::new(monkeys.clone()));
-    let ids = monkeys.keys().collect::<Vec<_>>();
-
-    let mut new_monkeys = monkeys.clone();
-    for i in 1..=20 {
-        new_monkeys = do_round(i, ids.clone(), new_monkeys, 3, 1);
-    }
-    get_monkey_business(new_monkeys)
+fn part1<T: AsRef<str>>(lines: Vec<T>) -> u64 {
+    let end_result = do_n_rounds(20,  parse_monkeys(lines), &mut |w| w / 3);
+    get_monkey_business(end_result)
 }
 
-fn part2<T: AsRef<str>>(lines: Vec<T>) -> u128 {
+fn part2<T: AsRef<str>>(lines: Vec<T>) -> u64 {
     let monkeys = parse_monkeys(lines);
 
     // thank you math bro https://dev.to/nickymeuleman/advent-of-code-2022-day-11-12o3
-    let common_multiple: u128 = monkeys.iter().map(|(_, monkey)| monkey.test).product();
+    // I guess with some thinkging i could've realized this as well
+    let common_multiple: u64 = monkeys.iter().map(|(_, monkey)| monkey.test).product();
 
-    print_monkeys(format!("Initial state"), Box::new(monkeys.clone()));
-    let ids = monkeys.keys().collect::<Vec<_>>();
-
-    let mut new_monkeys = monkeys.clone();
-    for i in 1..=10000 {
-        new_monkeys = do_round(i, ids.clone(), new_monkeys, 1, common_multiple);
-    }
-    get_monkey_business(new_monkeys)
+    let end_result = do_n_rounds(10000,  monkeys.clone(), &mut |w| w % common_multiple);
+    get_monkey_business(end_result)
 }
 
 #[cfg(test)]
