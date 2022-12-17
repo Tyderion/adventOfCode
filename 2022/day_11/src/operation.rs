@@ -31,4 +31,13 @@ impl Operation {
         }
         None
     }
+
+    pub fn apply(&self, old: i32) -> i32 {
+        match self {
+            Operation::Add(num) => old + num,
+            Operation::AddOld => old + old,
+            Operation::Multiply(num) => old * num,
+            Operation::MultiplyOld => old * old,
+        }
+    }
 }

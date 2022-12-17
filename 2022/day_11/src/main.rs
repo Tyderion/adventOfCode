@@ -1,4 +1,7 @@
-use std::{iter::Map, collections::HashMap};
+use std::{
+    collections::{BTreeMap, HashMap},
+    iter::Map,
+};
 
 use monkey::MonkeyId;
 
@@ -18,12 +21,20 @@ fn main() {
     println!("Part2: ??{}", part2_result);
 }
 
-fn parse_monkeys<T: AsRef<str>>(lines: Vec<T>) -> HashMap<MonkeyId, Monkey> {
+fn parse_monkeys<T: AsRef<str>>(lines: Vec<T>) -> BTreeMap<MonkeyId, Monkey> {
     lines
-    .chunks(7)
-    .map(|chunk| Monkey::from(chunk.iter().map(|s| s.as_ref()).filter(|s| !s.is_empty()).collect()))
-    .map(|monkey| (monkey.id, monkey))
-    .collect()
+        .chunks(7)
+        .map(|chunk| {
+            Monkey::from(
+                chunk
+                    .iter()
+                    .map(|s| s.as_ref())
+                    .filter(|s| !s.is_empty())
+                    .collect(),
+            )
+        })
+        .map(|monkey| (monkey.id, monkey))
+        .collect()
 }
 
 fn part1<T: AsRef<str>>(lines: Vec<T>) -> i32 {

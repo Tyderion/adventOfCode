@@ -2,7 +2,7 @@ use crate::operation::Operation;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, PartialOrd, Ord)]
 pub struct MonkeyId(i32);
 
 impl MonkeyId {
@@ -78,8 +78,25 @@ impl Monkey {
         panic!("Invalid test: {}", input.as_ref());
     }
 
-    pub fn inspect(&mut self) {
-        self.inspections += 1;
+    pub fn inspect(&mut self) -> Vec<(MonkeyId, i32)> {
+        let result = self.items.iter_mut().map(|item| {
+            self.inspections += 1;
+            // Inspection increases worry level
+            *item = self.operation.apply(*item);
+            // After inspection, worry level decreases
+            *item /= 3;
+            if *item % self.test == 0 {
+                (self.if_true, *item)
+            } else {
+                (self.if_false, *item)
+            }
+        }).collect();
+        self.items = vec![];
+        result
+    }
+
+    pub fn catch_item(&mut self, item: i32) {
+        self.items.push(item);
     }
 
     pub fn get_inspection_count(&self) -> i32 {
