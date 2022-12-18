@@ -303,6 +303,24 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "'day_13'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=day_13",
+                    "--package=day_13"
+                ],
+                "filter": {
+                    "name": "day_13",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "'advent_of_code_2022'",
             "cargo": {
                 "args": [
