@@ -9,6 +9,7 @@ edition = "2021"
 fileutils = { path = "../fileutils" }
 lazy_static = "1.4.0"
 regex = "1.4.3"
+itertools = "0.10.5"
 
 [dev-dependencies]
 test-case = "2.2.2"
