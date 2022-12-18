@@ -3,25 +3,25 @@ use pathfinding::prelude::bfs;
 use std::collections::{HashSet, VecDeque};
 fn main() {
     let part1_result = part1();
-    // let part2_result = part2(lines.clone());
     println!("Steps required to walk to target: {}", part1_result);
-    // println!("part2 : {}", part2_result);
+    let part2_result = part2();
+    println!("part2 : {}", part2_result);
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 struct Position(usize, usize);
 lazy_static! {
-    static ref PLAYING_DATA: (Vec<Vec<u8>>, Position, Position, Position) =
+    static ref PLAYING_DATA: (Vec<Vec<u8>>, VecDeque<Position>, Position, Position) =
         create_playing_field(fileutils::lines_from_file("day_12/src/input.txt"));
         // create_playing_field(fileutils::lines_from_file("day_12/src/example.txt"));
 }
 
 fn create_playing_field<T: AsRef<str>>(
     lines: Vec<T>,
-) -> (Vec<Vec<u8>>, Position, Position, Position) {
+) -> (Vec<Vec<u8>>, VecDeque<Position>, Position, Position) {
     let mut playing_field = Vec::new();
 
-    let mut start_position = Position(0, 0);
+    let mut starting_positions: VecDeque<Position> = VecDeque::new();
     let mut end_position = Position(0, 0);
     let mut max_position = Position(0, 0);
     for (row, line) in lines.iter().enumerate() {
@@ -30,11 +30,15 @@ fn create_playing_field<T: AsRef<str>>(
             match c {
                 'S' => {
                     current_row.push('a' as u8);
-                    start_position = Position(row, col);
+                    starting_positions.push_front(Position(row, col));
                 }
                 'E' => {
                     current_row.push('z' as u8);
                     end_position = Position(row, col);
+                }
+                'a' => {
+                    current_row.push('a' as u8);
+                    starting_positions.push_back(Position(row, col));
                 }
                 _ => current_row.push(c as u8),
             }
@@ -44,7 +48,12 @@ fn create_playing_field<T: AsRef<str>>(
         }
         playing_field.push(current_row);
     }
-    (playing_field, start_position, end_position, max_position)
+    (
+        playing_field,
+        starting_positions,
+        end_position,
+        max_position,
+    )
 }
 
 impl Position {
@@ -115,16 +124,28 @@ impl Position {
 }
 
 fn part1() -> usize {
-    // one less because we don't have to step to start position, but it's part of the path
-
-    let starting_pos = PLAYING_DATA.1;
+    let starting_pos = PLAYING_DATA.1.front().unwrap();
     let goal_pos = PLAYING_DATA.2;
-    let result = bfs(&starting_pos, |p| p.surrounding(), |p| *p == goal_pos);
+    let result = bfs(starting_pos, |p| p.surrounding(), |p| *p == goal_pos);
     result.unwrap().len() - 1
 }
 
-fn _part2<T: AsRef<str>>(_lines: Vec<T>) -> u32 {
-    todo!()
+fn part2() -> usize {
+    let goal_pos = PLAYING_DATA.2;
+
+    let mut shortest_path: usize = usize::MAX;
+    for starting_position in PLAYING_DATA.1.iter() {
+        let result = bfs(starting_position, |p| p.surrounding(), |p| *p == goal_pos);
+        match result {
+            Some(path) => {
+                if path.len() < shortest_path {
+                    shortest_path = path.len();
+                }
+            }
+            None => (),
+        }
+    }
+    shortest_path - 1
 }
 
 #[cfg(test)]
