@@ -1,6 +1,10 @@
+#![feature(assert_matches)]
+use std::vec;
+
+use either::Either;
 use itertools::Itertools;
-use lazy_static::lazy_static;
-use regex::Captures;
+
+
 
 fn main() {
     let filename = "day_13/src/input.txt";
@@ -19,142 +23,122 @@ enum Value {
     List(Vec<Value>),
 }
 
+fn sanitize_input<T: AsRef<str>>(input: T) -> String {
+    let mut sanitized = input.as_ref().to_string();
+    while sanitized.starts_with(",") {
+        sanitized = sanitized[1..].to_string();
+    }
+    sanitized
+}
+
+fn split_into_groups<T: AsRef<str>>(
+    input: T,
+) -> Either<(Option<String>, Option<String>, Option<String>), Option<String>> {
+    fn to_option(s: String) -> Option<String> {
+        if s.is_empty() {
+            None
+        } else {
+            Some(s)
+        }
+    }
+    let mut open = 0;
+    let mut close = 0;
+    let mut middle = 0;
+    let mut start = None;
+    let mut end = 0;
+    for (i, c) in input.as_ref().chars().enumerate() {
+        if (c.is_numeric() || c == ',') && start.is_none() {
+            middle += 1;
+        }
+        if c == '[' {
+            if open == 0 {
+                start = Some(i);
+            }
+            open += 1;
+        } else if c == ']' {
+            close += 1;
+            if open == close {
+                end = i;
+                break;
+            }
+        }
+    }
+    let mut right = input.as_ref().to_string();
+
+    let left = right.drain(0..middle).collect::<String>();
+    let middle = if start.is_some() && start.unwrap() >= middle {
+        right
+            .drain(start.unwrap() - middle..=end - middle)
+            .collect::<String>()
+    } else {
+        "".to_string()
+    };
+    if left == "" && right == "" {
+        return Either::Right(to_option(middle[1..middle.len() - 1].to_string()));
+    }
+
+    Either::Left((
+        to_option(left),
+        to_option(middle),
+        to_option(sanitize_input(right)),
+    ))
+}
+
 impl Value {
     fn from_list(nums: Vec<i32>) -> Self {
         Value::List(nums.iter().map(|n| Self::Number(*n)).collect())
     }
 
-    fn parse_number<T: AsRef<str>>(input: T) -> Self {
-        Self::from_list(
-            input
-                .as_ref()
-                .split(',')
-                .filter(|x| !x.is_empty())
-                .map(|x| x.parse::<i32>().unwrap())
-                .collect::<Vec<i32>>(),
-        )
+    fn as_list(&self) -> Vec<Value> {
+        match self {
+            Value::Number(n) => vec![Self::Number(*n)],
+            Value::List(list) => list.iter().map(|l| l.clone()).collect(),
+        }
+    }
+
+    fn parse_numbers<T: AsRef<str>>(input: T) -> Vec<Self> {
+        input
+            .as_ref()
+            .split(',')
+            .filter(|x| !x.is_empty())
+            .map(|x| x.to_string())
+            .map(|n| Self::Number(n.parse::<i32>().unwrap()))
+            .collect()
     }
 
     fn parse<T: AsRef<str>>(input: T) -> Self {
-        lazy_static! {
-            static ref RE_WRAPPED_NUMBER_LIST: regex::Regex =
-                regex::Regex::new(r"^(\[((?:\d+,?)+)\],?)").unwrap();
-            static ref RE_UNWRAPPED_NUMBER_LIST: regex::Regex =
-                regex::Regex::new(r"^(,?((?:\d+,?)+),?)").unwrap();
-            static ref RE_MIXED_LIST: regex::Regex =
-                regex::Regex::new(r"^(\[((?:\d+,?)+))").unwrap();
-            static ref RE_NESTED_LIST: regex::Regex = regex::Regex::new(r"^\[(\[.*)\]").unwrap();
-        }
-        fn sanitize_input<T: AsRef<str>>(input: T) -> String {
-            let mut sanitized = input.as_ref().to_string();
-            while sanitized.starts_with(",") || sanitized.starts_with("]") {
-                sanitized = sanitized[1..].to_string();
-            }
-            if sanitized == "[" {
-                sanitized = "".to_string();
-            }
-            sanitized
-        }
-        fn get_rest<T: AsRef<str>>(input: T, c: Captures, index: usize) -> String {
-            let mut rest = input.as_ref().to_string();
-            if let Some(m) = c.get(index) {
-                // remove complete match
-                rest.replace_range(m.range(), "");
-            }
-
-            sanitize_input(rest)
-        }
         let input = input.as_ref();
-        println!("input: {}", input);
-        if let Some(captures) = RE_WRAPPED_NUMBER_LIST.captures(input) {
-            if let Some(c) = captures.get(2) {
-                let numbers = Self::parse_number(c.as_str());
-                let rest = get_rest(input, captures, 1);
-                if rest.len() == 0 {
-                    return numbers;
+        // println!("--------------------------------");
+        // println!("input: {}", input);
+        let split = split_into_groups(input);
+        // println!("split: {:?}", split);
+        return match split {
+            Either::Right(Some(list)) => Self::parse(list),
+            Either::Right(None) => Self::List(vec![]),
+            Either::Left((None, Some(list), None)) => Self::parse(list),
+            Either::Left((None, Some(list), Some(rest))) => {
+                Self::List(vec![Self::parse(list), Self::parse(rest)])
+            }
+            Either::Left((Some(numbers), None, None)) => Self::List(Self::parse_numbers(numbers)),
+            Either::Left((Some(numbers), Some(middle), None)) => {
+                let mut list = Self::parse_numbers(numbers);
+                list.push(Self::parse(middle));
+                Self::List(list)
+            }
+            Either::Left((Some(numbers), Some(middle), Some(right))) => {
+                let mut list = Self::parse_numbers(numbers);
+                list.push(Self::parse(middle));
+                let right_is_list = right.starts_with('[');
+                let right_part = Self::parse(right);
+                if right_is_list {
+                    list.push(right_part);
                 } else {
-                    return Self::List(vec![numbers, Self::parse(rest)]);
+                    list.extend(right_part.as_list())
                 }
+                Self::List(list)
             }
-            panic!("Regex matched but no captured group")
-        } else if let Some(captures) = RE_UNWRAPPED_NUMBER_LIST.captures(input) {
-            if let Some(c) = captures.get(2) {
-                println!("unwrapped number: {}", c.as_str());
-                let numbers = Self::parse_number(c.as_str());
-                let rest = get_rest(input, captures, 1);
-                println!("unwrapped rest: {}", rest);
-
-                if rest.len() == 0 {
-                    return numbers;
-                } else {
-                    return Self::List(vec![numbers, Self::parse(rest)]);
-                }
-            }
-            panic!("Regex matched but no captured group")
-        } else if let Some(captures) = RE_NESTED_LIST.captures(input) {
-            Value::parse(captures.get(1).unwrap().as_str())
-        } else if input == "[]" {
-            Value::List(vec![])
-        } else if let Some(captures) = RE_MIXED_LIST.captures(input) {
-            fn find_nested_group<T: AsRef<str>>(input: T) -> (String, String) {
-                let mut open = 0;
-                let mut close = 0;
-                let mut start = 0;
-                let mut end = 0;
-                for (i, c) in input.as_ref().chars().enumerate() {
-                    if c == '[' {
-                        if open == 0 {
-                            start = i;
-                        }
-                        open += 1;
-                    } else if c == ']' {
-                        close += 1;
-                        if open == close {
-                            end = i;
-                            break;
-                        }
-                    }
-                }
-                let mut rest = input.as_ref().to_string();
-                let nested = rest.drain(start..=end).collect::<String>();
-                
-                (nested, sanitize_input(rest))
-            }
-
-            if let Some(c) = captures.get(2) {
-                let the_rest = get_rest(input, captures, 1);
-                println!("left {}", c.as_str());
-                println!("the rest: {}", the_rest);
-                let (nested, rest) = find_nested_group(the_rest);
-                println!("nested: {}", nested);
-                println!("rest: {}", rest);
-                let left_values = Self::parse(c.as_str());
-                println!("left_values: {:?}", left_values);
-                let right_values = match rest.len() {
-                    0 => None,
-                    _ => Some(Self::parse(rest)),
-                };
-                println!("right_values: {:?}", right_values);
-                let nested_value = Self::parse(nested);
-                println!("nested_value: {:?}", nested_value);
-                let mut result = vec![];
-                if let Value::List(left) = left_values {
-                    result.extend(left);
-                } else {
-                    result.push(left_values);
-                }
-                result.push(nested_value);
-                match right_values {
-                    Some(Value::List(right)) => result.extend(right),
-                    Some(Value::Number(n)) => result.push(Value::Number(n)),
-                    None => (),
-                }
-                return Value::List(result);
-            }
-            Value::List(vec![])
-        } else {
-            todo!()
-        }
+            _ => todo!(),
+        };
     }
 }
 
@@ -230,6 +214,7 @@ fn part2<T: AsRef<str>>(_lines: Vec<T>) -> u64 {
 mod tests {
     use super::*;
     use itertools::Itertools;
+    use std::assert_matches::assert_matches;
     use test_case::test_case;
 
     fn example_input() -> Vec<String> {
@@ -299,17 +284,40 @@ mod tests {
     //     assert_eq!(left.partial_cmp(&right), Some(expected))
     // }
 
+    // #[test_case("[[]]", (None, Some("[]".to_string()), None); "nested empty list")]
+    // #[test_case("[]", ("", "", ""); "empty list")]
+    // #[test]
+    // fn test_nested_group() {
+    //     match split_into_groups("[1,1,3,1,1]") {
+    //         (None, Some(x), None) => assert_eq!("1,1,3,1,1", x),
+    //         _ => assert!(false),
+    //     }
+    // }
+
+    // #[test]
+    // fn test_nested_group() {
+    //     match split_into_groups("[]") {
+    //         (None, Some(x), None) => assert_eq!("1,1,3,1,1", x),
+    //         _ => assert!(false),
+    //     }
+    // }
+
+    #[test_case("[1,2,[3]]", Value::List(vec![Value::Number(1), Value::Number(2), Value::List(vec![Value::Number(3)])]); "combined list")]
+    #[test_case("[1,2,[3],[4]]", Value::List(vec![Value::Number(1), Value::Number(2), Value::List(vec![Value::Number(3)]), Value::List(vec![Value::Number(4)])]); "combined list2")]
+    #[test_case("[1,2,[3],4]", Value::List(vec![Value::Number(1), Value::Number(2), Value::List(vec![Value::Number(3)]), Value::Number(4)]); "combined list3")]
     #[test_case("[1,1,3,1,1]", Value::from_list(vec![1,1,3,1,1]); "wrapped simple list")]
     #[test_case(",1,3,1,", Value::from_list(vec![1,3,1]); "unwrapped simple list")]
     #[test_case("[1]", Value::from_list(vec![1]); "list of one")]
     #[test_case("[[1]]", Value::List(vec![Value::from_list(vec![1])]); "simple nested list")]
     #[test_case("[[1],[2,3,4]]", Value::List(vec![Value::from_list(vec![1]),Value::from_list(vec![2,3,4])]); "complex nested list")]
     #[test_case("[]", Value::List(vec![]); "empty list")]
+    #[test_case("[1,[2]]", Value::List(vec![Value::Number(1), Value::List(vec![Value::Number(2)])]); "simple mixed nested list")]
+    #[test_case("[1,[2],3]", Value::List(vec![Value::Number(1), Value::List(vec![Value::Number(2)]), Value::Number(3)]); "simple contained list")]
     #[test_case("[1,[2,[3,[4,[5,6,7]]]],8,9]", Value::List(vec![Value::Number(1), Value::List(vec![Value::Number(2), Value::List(vec![Value::Number(3), Value::List(vec![Value::Number(4), Value::from_list(vec![5, 6, 7])])])]), Value::Number(8), Value::Number(9)]); "mixed list")]
     #[test_case("[1,10,[2,[3,[4,[5,6,7]]]],8,9]", Value::List(vec![Value::Number(1),Value::Number(10), Value::List(vec![Value::Number(2), Value::List(vec![Value::Number(3), Value::List(vec![Value::Number(4), Value::from_list(vec![5, 6, 7])])])]), Value::Number(8), Value::Number(9)]); "mixed list 2")]
 
     fn parse_value<T: AsRef<str>>(input: T, expected: Value) {
-        println!("input: {}", input.as_ref());
+        // println!("input: {}", input.as_ref());
         assert_eq!(Value::parse(input), expected)
     }
 
@@ -317,6 +325,7 @@ mod tests {
     fn bubu() {
         let result =
             Value::parse("[[5,[[3,0]],[0,[8,6,9],2,9],[5,6,[2,8,3],[0]],[6,2,[2,6,8],10]]]");
+            println!("{:?}", result);
         assert!(false)
     }
 
