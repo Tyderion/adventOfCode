@@ -145,7 +145,7 @@ fn split_into_groups<T: AsRef<str>>(
 }
 
 impl Value {
-    fn unwrap_line<T: AsRef<str>>(input: T) -> Option<Self> {
+    fn parse<T: AsRef<str>>(input: T) -> Option<Self> {
         println!("-------unwrap_line-------");
         if input.as_ref() == "" {
             return None;
@@ -169,7 +169,7 @@ impl Value {
         println!("left: {}, group: {}, right: {}", left, group, right);
         let mut result = Self::parse_numbers(left);
         if !group.is_empty() {
-            let group = Self::unwrap_line(group[1..group.len() - 1].to_string());
+            let group = Self::parse(group[1..group.len() - 1].to_string());
             if let Some(group) = group {
                 result.push(group);
             }
@@ -197,41 +197,6 @@ impl Value {
             .map(|x| x.to_string())
             .map(|n| Self::Number(n.parse::<i32>().unwrap()))
             .collect()
-    }
-
-    fn parse<T: AsRef<str>>(input: T) -> Self {
-        let input = input.as_ref();
-        // println!("--------------------------------");
-        // println!("input: {}", input);
-        let split = split_into_groups(input);
-        // println!("split: {:?}", split);
-        return match split {
-            Either::Right(Some(list)) => Self::parse(list),
-            Either::Right(None) => Self::List(vec![]),
-            Either::Left((None, Some(list), None)) => Self::parse(list),
-            Either::Left((None, Some(list), Some(rest))) => {
-                Self::List(vec![Self::parse(list), Self::parse(rest)])
-            }
-            Either::Left((Some(numbers), None, None)) => Self::List(Self::parse_numbers(numbers)),
-            Either::Left((Some(numbers), Some(middle), None)) => {
-                let mut list = Self::parse_numbers(numbers);
-                list.push(Self::parse(middle));
-                Self::List(list)
-            }
-            Either::Left((Some(numbers), Some(middle), Some(right))) => {
-                let mut list = Self::parse_numbers(numbers);
-                list.push(Self::parse(middle));
-                let right_is_list = right.starts_with('[');
-                let right_part = Self::parse(right);
-                if right_is_list {
-                    list.push(right_part);
-                } else {
-                    list.extend(right_part.as_list())
-                }
-                Self::List(list)
-            }
-            _ => todo!(),
-        };
     }
 }
 
@@ -422,7 +387,7 @@ mod tests {
     #[test_case("[1,10,[2,[3,[4,[5,6,7]]]],8,9]", Value::List(vec![Value::Number(1),Value::Number(10), Value::List(vec![Value::Number(2), Value::List(vec![Value::Number(3), Value::List(vec![Value::Number(4), Value::from_list(vec![5, 6, 7])])])]), Value::Number(8), Value::Number(9)]); "mixed list 2")]
 
     fn parse_value<T: AsRef<str>>(input: T, expected: Value) {
-        let result = Value::unwrap_line(&input).unwrap();
+        let result = Value::parse(&input).unwrap();
         println!("input: {} -> {:?}", input.as_ref(), result);
         assert_eq!(result, expected)
     }
