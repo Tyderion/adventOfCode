@@ -1,3 +1,6 @@
+use lazy_static::lazy_static;
+use regex::{Captures, Regex};
+
 pub fn main() {
     let filename = "day_1/src/input.txt";
     let input = fileutils::safe_lines_from_file(filename);
@@ -10,7 +13,7 @@ pub fn main() {
         Some(ref lines) => part2(lines),
     };
     println!("Sum of nubmers: {}", part1_result);
-    println!("Sum of nubmers: {}", part2_result);
+    println!("Sum of part 2: {}", part2_result);
 }
 
 fn part1(lines: &Vec<String>) -> u32 {
@@ -30,8 +33,32 @@ fn part1(lines: &Vec<String>) -> u32 {
         .sum::<u32>();
 }
 
-fn part2(_lines: &Vec<String>) -> u32 {
-    return 0;
+fn part2(lines: &Vec<String>) -> u32 {
+    lazy_static! {
+        static ref RE: Regex =
+            Regex::new(r"(one|two|three|four|five|six|seven|eight|nine)").unwrap();
+    }
+
+    let replacement = |caps: &Captures| match caps.get(0).unwrap().as_str() {
+        "one" => "1e",
+        "two" => "2o",
+        "three" => "3e",
+        "four" => "4r",
+        "five" => "5e",
+        "six" => "6x",
+        "seven" => "7n",
+        "eight" => "8t",
+        "nine" => "9e",
+        _ => "",
+    };
+
+    let replaced_numbers = lines
+        .iter()
+        .map(|l| RE.replace_all(l.as_ref(), &replacement).to_string())
+        // Do it twice to handle overlapping cases
+        .map(|l| RE.replace_all(l.as_ref(), &replacement).to_string())
+        .collect::<Vec<_>>();
+    return part1(replaced_numbers.as_ref());
 }
 
 #[cfg(test)]
@@ -49,6 +76,8 @@ mod tests {
         "7pqrstsixteen",
     ];
 
+    const TEST: [&str; 1] = ["eightwo"];
+
     #[test]
     fn example_case_part1() {
         let result = part1(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
@@ -59,5 +88,11 @@ mod tests {
     fn example_case_part2() {
         let result = part2(&EXAMPLE_INPUT2.iter().map(|x| String::from(*x)).collect());
         assert_eq!(result, 281);
+    }
+
+    #[test]
+    fn custom_test() {
+        let result = part2(&TEST.iter().map(|x| String::from(*x)).collect());
+        assert_eq!(result, 82);
     }
 }
