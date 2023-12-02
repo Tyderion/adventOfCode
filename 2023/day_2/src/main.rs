@@ -1,7 +1,7 @@
-use game::Game;
-
 mod game;
 mod pull;
+
+use game::Game;
 
 pub fn main() {
     let filename = "day_2/src/input.txt";
@@ -23,15 +23,12 @@ fn get_games(lines: &Vec<String>) -> Vec<Game> {
 }
 
 fn part1(lines: &Vec<String>) -> u32 {
-    const RED_LIMIT: u32 = 12;
-    const GREEN_LIMIT: u32 = 13;
-    const BLUE_LIMIT: u32 = 14;
     return get_games(lines)
         .iter()
         .filter(|g| {
             g.pulls
                 .iter()
-                .all(|p| p.is_valid(RED_LIMIT, GREEN_LIMIT, BLUE_LIMIT))
+                .all(|pull| pull.red <= 12 && pull.green <= 13 && pull.blue <= 14)
         })
         .map(|g| g.id)
         .sum();

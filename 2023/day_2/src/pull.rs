@@ -1,8 +1,8 @@
 #[derive(Debug)]
 pub struct Pull {
-    red: u32,
-    green: u32,
-    blue: u32,
+    pub red: u32,
+    pub green: u32,
+    pub blue: u32,
 }
 
 impl Pull {
@@ -16,7 +16,7 @@ impl Pull {
 
     fn red(&self, red: u32) -> Pull {
         Pull {
-            red: red,
+            red,
             green: self.green,
             blue: self.blue,
         }
@@ -24,7 +24,7 @@ impl Pull {
     fn green(&self, green: u32) -> Pull {
         Pull {
             red: self.red,
-            green: green,
+            green,
             blue: self.blue,
         }
     }
@@ -32,7 +32,7 @@ impl Pull {
         Pull {
             red: self.red,
             green: self.green,
-            blue: blue,
+            blue,
         }
     }
 
@@ -50,9 +50,5 @@ impl Pull {
                     _ => panic!("There should be no other option"),
                 }
             });
-    }
-
-    pub fn is_valid(&self, red: u32, green: u32, blue: u32) -> bool {
-        return self.red <= red && self.green <= green && self.blue <= blue;
     }
 }
