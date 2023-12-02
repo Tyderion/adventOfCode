@@ -144,4 +144,10 @@ mod tests {
         let result = part1(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
         assert_eq!(result, 8);
     }
+
+    #[test]
+    fn example_case_part2() {
+        let result = part2(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
+        assert_eq!(result, 2286);
+    }
 }
