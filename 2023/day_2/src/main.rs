@@ -4,6 +4,7 @@ mod pull;
 use std::cmp;
 
 use game::Game;
+use pull::Pull;
 
 pub fn main() {
     let filename = "day_2/src/input.txt";
@@ -40,13 +41,11 @@ fn part2(lines: &Vec<String>) -> u32 {
     return get_games(lines)
         .iter()
         .map(|g| {
-            g.pulls
-                .iter()
-                .fold(pull::Pull::default(), |acc, ele| pull::Pull {
-                    red: cmp::max(acc.red, ele.red),
-                    green: cmp::max(acc.green, ele.green),
-                    blue: cmp::max(acc.blue, ele.blue),
-                })
+            g.pulls.iter().fold(Pull::default(), |acc, ele| Pull {
+                red: cmp::max(acc.red, ele.red),
+                green: cmp::max(acc.green, ele.green),
+                blue: cmp::max(acc.blue, ele.blue),
+            })
         })
         .map(|p| p.red * p.green * p.blue)
         .sum();

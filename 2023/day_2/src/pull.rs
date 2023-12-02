@@ -42,11 +42,11 @@ impl Pull {
             .as_ref()
             .trim()
             .split(",")
-            .fold(Pull::default(), |pull, single_color| {
-                match single_color.trim().split(" ").collect::<Vec<_>>()[..] {
-                    [num, "red"] => pull.red(num.parse::<u32>().unwrap()),
-                    [num, "green"] => pull.green(num.parse::<u32>().unwrap()),
-                    [num, "blue"] => pull.blue(num.parse::<u32>().unwrap()),
+            .fold(Pull::default(), |acc, ele| {
+                match ele.trim().split(" ").collect::<Vec<_>>()[..] {
+                    [num, "red"] => acc.red(num.parse::<u32>().unwrap()),
+                    [num, "green"] => acc.green(num.parse::<u32>().unwrap()),
+                    [num, "blue"] => acc.blue(num.parse::<u32>().unwrap()),
                     _ => panic!("There should be no other option"),
                 }
             });
