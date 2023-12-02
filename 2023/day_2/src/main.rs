@@ -40,8 +40,8 @@ fn part2(lines: &Vec<String>) -> u32 {
     return get_games(lines)
         .iter()
         .map(|g| {
-            g.pulls.iter().fold(vec![0u32; 3], |acc, ele| {
-                vec![
+            g.pulls.iter().fold([0u32; 3], |acc, ele| {
+                [
                     cmp::max(acc[0], ele.red),
                     cmp::max(acc[1], ele.green),
                     cmp::max(acc[2], ele.blue),
