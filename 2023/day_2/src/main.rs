@@ -1,6 +1,8 @@
 mod game;
 mod pull;
 
+use std::cmp;
+
 use game::Game;
 
 pub fn main() {
@@ -34,8 +36,20 @@ fn part1(lines: &Vec<String>) -> u32 {
         .sum();
 }
 
-fn part2(_lines: &Vec<String>) -> u32 {
-    return 0;
+fn part2(lines: &Vec<String>) -> u32 {
+    return get_games(lines)
+        .iter()
+        .map(|g| {
+            g.pulls
+                .iter()
+                .fold(pull::Pull::default(), |acc, ele| pull::Pull {
+                    red: cmp::max(acc.red, ele.red),
+                    green: cmp::max(acc.green, ele.green),
+                    blue: cmp::max(acc.blue, ele.blue),
+                })
+        })
+        .map(|p| p.red * p.green * p.blue)
+        .sum();
 }
 
 #[cfg(test)]
