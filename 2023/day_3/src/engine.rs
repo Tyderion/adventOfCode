@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Hash, Eq, PartialEq, Copy, Clone)]
 pub struct PartNumber {
@@ -27,6 +27,14 @@ fn add_part_number(number: &Option<(usize, usize, String)>, list: &mut Vec<PartN
             start: *start,
             end: *end,
         })
+    }
+}
+
+fn lower_bound(value: usize) -> usize {
+    if value > 0 {
+        value - 1
+    } else {
+        value
     }
 }
 
@@ -68,5 +76,24 @@ impl Engine {
             parts,
             part_numbers,
         };
+    }
+
+    pub fn get_part_list(&self) -> Vec<(Part, HashSet<PartNumber>)> {
+        self.parts.iter().map(|p| {
+            let mut part_numbers: HashSet<PartNumber> = HashSet::new();
+            for row in lower_bound(p.row)..=p.row + 1 {
+                for col in lower_bound(p.col)..=p.col + 1 {
+                    if let Some(possible_nums) = self.part_numbers.get(&row) {
+                        possible_nums
+                            .iter()
+                            .filter(|num| (num.start..=num.end).contains(&col))
+                            .for_each(|p| {
+                                part_numbers.insert(*p);
+                            });
+                    }
+                }
+            }
+            (*p, part_numbers)
+        }).collect()
     }
 }

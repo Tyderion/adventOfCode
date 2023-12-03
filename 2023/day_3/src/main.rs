@@ -1,7 +1,5 @@
 mod engine;
 
-use std::collections::HashSet;
-
 use engine::Engine;
 
 pub fn main() {
@@ -19,48 +17,17 @@ pub fn main() {
     println!("Sum of part 2: {}", part2_result);
 }
 
-fn lower_bound(value: usize) -> usize {
-    if value > 0 {
-        value - 1
-    } else {
-        value
-    }
-}
-
-fn get_part_list(engine: &Engine) -> Vec<(engine::Part, HashSet<engine::PartNumber>)> {
-    let mut valid_parts: Vec<(engine::Part, HashSet<engine::PartNumber>)> = vec![];
-    engine.parts.iter().for_each(|p| {
-        let mut part_numbers: HashSet<engine::PartNumber> = HashSet::new();
-        for row in lower_bound(p.row)..=p.row + 1 {
-            for col in lower_bound(p.col)..=p.col + 1 {
-                if let Some(possible_nums) = engine.part_numbers.get(&row) {
-                    possible_nums
-                        .iter()
-                        .filter(|num| (num.start..=num.end).contains(&col))
-                        .for_each(|p| {
-                            part_numbers.insert(*p);
-                        });
-                }
-            }
-        }
-        valid_parts.push((*p, part_numbers));
-    });
-    valid_parts
-}
-
 fn part1(lines: &Vec<impl AsRef<str>>) -> u32 {
-    let engine = Engine::parse(lines);
-
-    return get_part_list(&engine)
+    return Engine::parse(lines)
+        .get_part_list()
         .iter()
         .flat_map(|(_, part_numbers)| part_numbers.iter().map(|p| p.id))
         .sum();
 }
 
 fn part2(lines: &Vec<impl AsRef<str>>) -> u32 {
-    let engine = Engine::parse(lines);
-
-    return get_part_list(&engine)
+    return Engine::parse(lines)
+        .get_part_list()
         .iter()
         .filter(|(part, part_numbers)| part.symbol == '*' && part_numbers.len() == 2)
         .map(|(_, parts)| parts.iter().map(|p| p.id).product::<u32>())
@@ -98,18 +65,18 @@ mod tests {
     ];
 
     const REDDIT_EXAMPLE_INPUT1: [&str; 12] = [
-        "12.......*..", // ok
-        "+.........34", // miss 34
-        ".......-12..", // ok
-        "..78........", // ok
-        "..*....60...", // ok
-        "78..........", // ok
-        ".......23...", // ok
-        "....90*12...", // ok
-        "............", // ok
-        "2.2......12.", // ok
-        ".*.........*", // ok
-        "1.1.......56", // miss 56
+        "12.......*..",
+        "+.........34",
+        ".......-12..",
+        "..78........",
+        "..*....60...",
+        "78..........",
+        ".......23...",
+        "....90*12...",
+        "............",
+        "2.2......12.",
+        ".*.........*",
+        "1.1.......56",
     ];
 
     const REDDIT_EXAMPLE_INPUT2: [&str; 12] = [
