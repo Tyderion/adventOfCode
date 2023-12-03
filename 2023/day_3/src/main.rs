@@ -34,39 +34,17 @@ fn get_valid_parts(engine: &Engine) -> Vec<engine::PartNumber> {
         for row in lower_bound(p.row)..=p.row + 1 {
             for col in lower_bound(p.col)..=p.col + 1 {
                 if let Some(possible_nums) = engine.part_numbers.get(&row) {
-                    let valid_nums = possible_nums
+                    possible_nums
                         .iter()
                         .filter(|num| (num.start..=num.end).contains(&col))
-                        .collect::<Vec<_>>();
-
-                    valid_nums.iter().for_each(|p| {
-                        part_numbers.insert(**p);
-                    });
+                        .for_each(|p| {
+                            part_numbers.insert(*p);
+                        });
                 }
             }
         }
-        let row_range = lower_bound(p.row)..=p.row + 1;
-        let col_range = lower_bound(p.col)..=p.col + 1;
-        let interested = 80;
-        // let interested_in = 135..;
-        if (interested..interested+10).contains(&p.row) {
-            println!(
-                "{}: ({}, {}) in ({:?}, {:?}) has numbers: {:?}",
-                p.symbol,
-                p.row,
-                p.col,
-                row_range,
-                col_range,
-                part_numbers.iter().map(|p| p.id).collect::<Vec<_>>()
-            );
-        }
         valid_parts.extend(part_numbers);
     });
-    println!("----------------");
-    // println!(
-    //     "parts {:?}",
-    //     valid_parts.iter().map(|p| p.id).collect::<Vec<_>>()
-    // );
     valid_parts
 }
 
