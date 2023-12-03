@@ -27,8 +27,8 @@ fn lower_bound(value: usize) -> usize {
     }
 }
 
-fn get_valid_parts(engine: &Engine) -> Vec<engine::PartNumber> {
-    let mut valid_parts: Vec<engine::PartNumber> = vec![];
+fn get_valid_parts(engine: &Engine) -> Vec<(char, HashSet<engine::PartNumber>)> {
+    let mut valid_parts: Vec<(char, HashSet<engine::PartNumber>)> = vec![];
     engine.parts.iter().for_each(|p| {
         let mut part_numbers: HashSet<engine::PartNumber> = HashSet::new();
         for row in lower_bound(p.row)..=p.row + 1 {
@@ -43,7 +43,7 @@ fn get_valid_parts(engine: &Engine) -> Vec<engine::PartNumber> {
                 }
             }
         }
-        valid_parts.extend(part_numbers);
+        valid_parts.push((p.symbol, part_numbers));
     });
     valid_parts
 }
@@ -53,11 +53,22 @@ fn part1(lines: &Vec<impl AsRef<str>>) -> u32 {
 
     let valid_parts = get_valid_parts(&engine);
 
-    return valid_parts.iter().map(|e| e.id).sum();
+    return valid_parts
+        .iter()
+        .flat_map(|(_, parts)| parts.iter().map(|p| p.id))
+        .sum();
 }
 
-fn part2(_lines: &Vec<impl AsRef<str>>) -> u32 {
-    return 0;
+fn part2(lines: &Vec<impl AsRef<str>>) -> u32 {
+    let engine = Engine::parse(lines);
+
+    let valid_parts = get_valid_parts(&engine);
+
+    return valid_parts
+        .iter()
+        .filter(|(symbol, parts)| *symbol == '*' && parts.len() == 2)
+        .map(|(_, parts)| parts.iter().map(|p| p.id).product::<u32>())
+        .sum::<u32>();
 }
 
 #[cfg(test)]
@@ -65,6 +76,19 @@ mod tests {
     use super::*;
 
     const EXAMPLE_INPUT1: [&str; 10] = [
+        "467..114..",
+        "...*......",
+        "..35..633.",
+        "......#...",
+        "617*......",
+        ".....+.58.",
+        "..592.....",
+        "......755.",
+        "...$.*....",
+        ".664.598..",
+    ];
+
+    const EXAMPLE_INPUT_PART2: [&str; 10] = [
         "467..114..",
         "...*......",
         "..35..633.",
@@ -111,6 +135,17 @@ mod tests {
     fn example_case_part1() {
         let result = part1(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
         assert_eq!(result, 4361);
+    }
+
+    #[test]
+    fn example_case_part2() {
+        let result = part2(
+            &EXAMPLE_INPUT_PART2
+                .iter()
+                .map(|x| String::from(*x))
+                .collect(),
+        );
+        assert_eq!(result, 467835);
     }
 
     #[test]
