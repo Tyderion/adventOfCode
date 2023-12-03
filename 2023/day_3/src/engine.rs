@@ -52,7 +52,7 @@ impl Engine {
                         }),
                     }
                     match c {
-                        'A'..='z' | '.' | '0'..='9' => (),
+                        'A'..='z' | '.' => (),
                         _ => {
                             parts.push(Part {
                                 symbol: c,

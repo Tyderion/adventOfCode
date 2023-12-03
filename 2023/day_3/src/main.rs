@@ -27,40 +27,54 @@ fn lower_bound(value: usize) -> usize {
     }
 }
 
-fn part1(lines: &Vec<impl AsRef<str>>) -> u32 {
-    let engine = Engine::parse(lines);
-    println!("{:?}", engine);
-    println!("----------------");
-    let mut valid_parts: HashSet<engine::PartNumber> = HashSet::new();
+fn get_valid_parts(engine: &Engine) -> Vec<engine::PartNumber> {
+    let mut valid_parts: Vec<engine::PartNumber> = vec![];
     engine.parts.iter().for_each(|p| {
-        let row_range = lower_bound(p.row)..=p.row + 1;
-        let col_range = lower_bound(p.col)..=p.col+1;
-        println!(
-            "{:?} looking in rows {:?} and in cols {:?}",
-            p, row_range, col_range
-        );
-        for row in row_range {
-            for col in lower_bound(p.col)..=p.col+1 {
+        let mut part_numbers: HashSet<engine::PartNumber> = HashSet::new();
+        for row in lower_bound(p.row)..=p.row + 1 {
+            for col in lower_bound(p.col)..=p.col + 1 {
                 if let Some(possible_nums) = engine.part_numbers.get(&row) {
                     let valid_nums = possible_nums
                         .iter()
                         .filter(|num| (num.start..=num.end).contains(&col))
                         .collect::<Vec<_>>();
-                    if valid_nums.len() > 0 {
-                        println!("{:?} has numbers: {:?}", p, valid_nums);
-                    }
+
                     valid_nums.iter().for_each(|p| {
-                        valid_parts.insert(**p);
+                        part_numbers.insert(**p);
                     });
                 }
             }
         }
+        let row_range = lower_bound(p.row)..=p.row + 1;
+        let col_range = lower_bound(p.col)..=p.col + 1;
+        let interested = 80;
+        // let interested_in = 135..;
+        if (interested..interested+10).contains(&p.row) {
+            println!(
+                "{}: ({}, {}) in ({:?}, {:?}) has numbers: {:?}",
+                p.symbol,
+                p.row,
+                p.col,
+                row_range,
+                col_range,
+                part_numbers.iter().map(|p| p.id).collect::<Vec<_>>()
+            );
+        }
+        valid_parts.extend(part_numbers);
     });
     println!("----------------");
-    println!(
-        "parts {:?}",
-        valid_parts.iter().map(|p| p.id).collect::<Vec<_>>()
-    );
+    // println!(
+    //     "parts {:?}",
+    //     valid_parts.iter().map(|p| p.id).collect::<Vec<_>>()
+    // );
+    valid_parts
+}
+
+fn part1(lines: &Vec<impl AsRef<str>>) -> u32 {
+    let engine = Engine::parse(lines);
+
+    let valid_parts = get_valid_parts(&engine);
+
     return valid_parts.iter().map(|e| e.id).sum();
 }
 
@@ -85,9 +99,74 @@ mod tests {
         ".664.598..",
     ];
 
+    const REDDIT_EXAMPLE_INPUT1: [&str; 12] = [
+        "12.......*..", // ok
+        "+.........34", // miss 34
+        ".......-12..", // ok
+        "..78........", // ok
+        "..*....60...", // ok
+        "78..........", // ok
+        ".......23...", // ok
+        "....90*12...", // ok
+        "............", // ok
+        "2.2......12.", // ok
+        ".*.........*", // ok
+        "1.1.......56", // miss 56
+    ];
+
+    const REDDIT_EXAMPLE_INPUT2: [&str; 12] = [
+        "12.......*..",
+        "+.........34",
+        ".......-12..",
+        "..78........",
+        "..*....60...",
+        "78.........9",
+        ".5.....23..$",
+        "8...90*12...",
+        "............",
+        "2.2......12.",
+        ".*.........*",
+        "1.1..503+.56",
+    ];
+
     #[test]
     fn example_case_part1() {
         let result = part1(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
         assert_eq!(result, 4361);
+    }
+
+    #[test]
+    fn reddit_example_case_part1() {
+        let result = part1(
+            &REDDIT_EXAMPLE_INPUT1
+                .iter()
+                .map(|x| String::from(*x))
+                .collect(),
+        );
+        assert_eq!(result, 413);
+    }
+
+    #[test]
+    fn reddit_example_case_part2() {
+        let result = part1(
+            &REDDIT_EXAMPLE_INPUT2
+                .iter()
+                .map(|x| String::from(*x))
+                .collect(),
+        );
+        assert_eq!(result, 925);
+    }
+
+    #[test]
+    fn test_parsing1() {
+        let engine = Engine::parse(&vec![String::from("............409..........784...578...802......64..............................486.248..............177....................369...............")]);
+        let numbers = engine
+            .part_numbers
+            .get(&0)
+            .unwrap()
+            .iter()
+            .map(|p| p.id)
+            .collect::<Vec<_>>();
+        assert_eq!(numbers, vec![409, 784, 578, 802, 64, 486, 248, 177, 369]);
     }
 }
