@@ -29,7 +29,7 @@ impl Engine {
             let mut parts_nums: Vec<PartNumber> = vec![];
             let mut number: Option<(usize, usize, String)> = None;
             l.as_ref().char_indices().for_each(|(col, c)| match c {
-                '1'..='9' => {
+                '0'..='9' => {
                     number = match &number {
                         Some((ref start, _, ref num)) => {
                             let mut new_value = String::from(num);
