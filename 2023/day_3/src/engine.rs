@@ -50,14 +50,14 @@ impl Engine {
                         }),
                     }
                     match c {
-                        '*' | '&' | '#' | '+' | '$' | '/' | '@' | '%' | '=' | '-' => {
+                        'A'..='z' | '.' | '0'..='9' => (),
+                        _ => {
                             parts.push(Part {
                                 symbol: c,
                                 row,
                                 col,
                             })
                         }
-                        _ => (),
                     }
                     number = None;
                 }
