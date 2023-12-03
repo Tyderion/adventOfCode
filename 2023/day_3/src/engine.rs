@@ -28,7 +28,9 @@ impl Engine {
         input.iter().enumerate().for_each(|(row, l)| {
             let mut parts_nums: Vec<PartNumber> = vec![];
             let mut number: Option<(usize, usize, String)> = None;
-            l.as_ref().char_indices().for_each(|(col, c)| match c {
+            let mut padded_line = l.as_ref().to_string();
+            padded_line.push('.');
+            padded_line.char_indices().for_each(|(col, c)| match c {
                 '0'..='9' => {
                     number = match &number {
                         Some((ref start, _, ref num)) => {
