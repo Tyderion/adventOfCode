@@ -7,7 +7,7 @@ pub struct PartNumber {
     pub end: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Hash, Eq, PartialEq, Copy, Clone)]
 pub struct Part {
     pub symbol: char,
     pub row: usize,
@@ -53,13 +53,11 @@ impl Engine {
                     }
                     match c {
                         'A'..='z' | '.' => (),
-                        _ => {
-                            parts.push(Part {
-                                symbol: c,
-                                row,
-                                col,
-                            })
-                        }
+                        _ => parts.push(Part {
+                            symbol: c,
+                            row,
+                            col,
+                        }),
                     }
                     number = None;
                 }

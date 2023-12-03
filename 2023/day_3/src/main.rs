@@ -27,8 +27,8 @@ fn lower_bound(value: usize) -> usize {
     }
 }
 
-fn get_valid_parts(engine: &Engine) -> Vec<(char, HashSet<engine::PartNumber>)> {
-    let mut valid_parts: Vec<(char, HashSet<engine::PartNumber>)> = vec![];
+fn get_part_list(engine: &Engine) -> Vec<(engine::Part, HashSet<engine::PartNumber>)> {
+    let mut valid_parts: Vec<(engine::Part, HashSet<engine::PartNumber>)> = vec![];
     engine.parts.iter().for_each(|p| {
         let mut part_numbers: HashSet<engine::PartNumber> = HashSet::new();
         for row in lower_bound(p.row)..=p.row + 1 {
@@ -43,7 +43,7 @@ fn get_valid_parts(engine: &Engine) -> Vec<(char, HashSet<engine::PartNumber>)> 
                 }
             }
         }
-        valid_parts.push((p.symbol, part_numbers));
+        valid_parts.push((*p, part_numbers));
     });
     valid_parts
 }
@@ -51,24 +51,20 @@ fn get_valid_parts(engine: &Engine) -> Vec<(char, HashSet<engine::PartNumber>)> 
 fn part1(lines: &Vec<impl AsRef<str>>) -> u32 {
     let engine = Engine::parse(lines);
 
-    let valid_parts = get_valid_parts(&engine);
-
-    return valid_parts
+    return get_part_list(&engine)
         .iter()
-        .flat_map(|(_, parts)| parts.iter().map(|p| p.id))
+        .flat_map(|(_, part_numbers)| part_numbers.iter().map(|p| p.id))
         .sum();
 }
 
 fn part2(lines: &Vec<impl AsRef<str>>) -> u32 {
     let engine = Engine::parse(lines);
 
-    let valid_parts = get_valid_parts(&engine);
-
-    return valid_parts
+    return get_part_list(&engine)
         .iter()
-        .filter(|(symbol, parts)| *symbol == '*' && parts.len() == 2)
+        .filter(|(part, part_numbers)| part.symbol == '*' && part_numbers.len() == 2)
         .map(|(_, parts)| parts.iter().map(|p| p.id).product::<u32>())
-        .sum::<u32>();
+        .sum();
 }
 
 #[cfg(test)]
