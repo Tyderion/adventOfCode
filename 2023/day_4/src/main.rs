@@ -1,7 +1,4 @@
-use std::{
-    collections::{hash_map::RandomState, HashMap, HashSet},
-    ops::RangeInclusive,
-};
+use std::collections::{hash_map::RandomState, HashMap, HashSet};
 
 pub fn main() {
     let filename = "day_4/src/input.txt";
@@ -73,23 +70,30 @@ fn part1(lines: &Vec<impl AsRef<str>>) -> u32 {
         .sum()
 }
 
-fn count_cards(
-    (_, additional): (&u32, &Option<RangeInclusive<u32>>),
-    cards: &HashMap<u32, Option<RangeInclusive<u32>>, RandomState>,
+fn count_cards_tail(
+    to_check: Vec<u32>,
+    counter: u32,
+    cards: &HashMap<u32, Vec<u32>, RandomState>,
 ) -> u32 {
-    match additional {
-        None => 1,
-        Some(additional_cards) => {
-            1 + additional_cards
-                .clone()
-                .map(|id| count_cards((&id, &cards.get(&id).unwrap()), cards))
-                .sum::<u32>()
-        }
+    if to_check.len() == 0 {
+        counter
+    } else {
+        count_cards_tail(
+            to_check
+                .iter()
+                .flat_map(|id| match cards.get(id) {
+                    None => vec![],
+                    Some(new_cards) => new_cards.clone(),
+                })
+                .collect(),
+            counter + to_check.len() as u32,
+            cards,
+        )
     }
 }
 
 fn part2(lines: &Vec<impl AsRef<str>>) -> u32 {
-    let all_cards: HashMap<u32, Option<RangeInclusive<u32>>, RandomState> = HashMap::from_iter(
+    let vec_cards: HashMap<u32, Vec<u32>, RandomState> = HashMap::from_iter(
         parse_cards(lines)
             .iter()
             .map(|card| {
@@ -107,15 +111,18 @@ fn part2(lines: &Vec<impl AsRef<str>>) -> u32 {
                 (
                     id,
                     if count > 0 {
-                        Some(id + 1..=id + count)
+                        (id + 1..=id + count).collect()
                     } else {
-                        None
+                        vec![]
                     },
                 )
             }),
     );
-
-    all_cards.iter().map(|c| count_cards(c, &all_cards)).sum()
+    count_cards_tail(
+        vec_cards.keys().map(|c| *c).collect::<Vec<_>>(),
+        0,
+        &vec_cards,
+    )
 }
 
 #[cfg(test)]
