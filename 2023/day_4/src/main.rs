@@ -30,8 +30,7 @@ fn parse_cards(lines: &Vec<impl AsRef<str>>) -> Vec<Card> {
 
             let id = card_parts[0]
                 .split(" ")
-                .map(|p| p.parse::<u32>())
-                .filter_map(|f| f.ok())
+                .filter_map(|p| p.parse::<u32>().ok())
                 .sum();
 
             let parts = card_parts[1].split("|").collect::<Vec<_>>();
@@ -39,15 +38,12 @@ fn parse_cards(lines: &Vec<impl AsRef<str>>) -> Vec<Card> {
                 id,
                 winning_numbers: HashSet::from_iter(
                     parts[0]
-                        .trim()
                         .split(" ")
-                        .map(|num| num.trim().parse::<u32>())
-                        .filter_map(|n| n.ok()),
+                        .filter_map(|num| num.trim().parse::<u32>().ok()),
                 ),
                 numbers: parts[1]
                     .split(" ")
-                    .map(|num| num.parse::<u32>())
-                    .filter_map(|n| n.ok())
+                    .filter_map(|num| num.parse::<u32>().ok())
                     .collect(),
             }
         })
@@ -65,7 +61,7 @@ fn part1(lines: &Vec<impl AsRef<str>>) -> u32 {
                     false => acc,
                 })
         })
-        .filter(|n| n > &&0)
+        .filter(|n| *n > 0)
         .map(|count| 2u32.pow(count - 1))
         .sum()
 }
@@ -93,7 +89,7 @@ fn count_cards_tail(
 }
 
 fn part2(lines: &Vec<impl AsRef<str>>) -> u32 {
-    let vec_cards: HashMap<u32, Vec<u32>, RandomState> = HashMap::from_iter(
+    let cards: HashMap<u32, Vec<u32>, RandomState> = HashMap::from_iter(
         parse_cards(lines)
             .iter()
             .map(|card| {
@@ -119,9 +115,9 @@ fn part2(lines: &Vec<impl AsRef<str>>) -> u32 {
             }),
     );
     count_cards_tail(
-        vec_cards.keys().map(|c| *c).collect::<Vec<_>>(),
+        cards.keys().map(|c| *c).collect::<Vec<_>>(),
         0,
-        &vec_cards,
+        &cards,
     )
 }
 
