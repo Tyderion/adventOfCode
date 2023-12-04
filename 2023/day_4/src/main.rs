@@ -13,8 +13,59 @@ pub fn main() {
     println!("Sum of part 2: {}", part2_result);
 }
 
-fn part1(_lines: &Vec<impl AsRef<str>>) -> u32 {
-    0
+#[derive(Debug, Clone)]
+struct Card {
+    id: u32,
+    winning_numbers: HashSet<u32>,
+    numbers: Vec<u32>,
+}
+
+fn parse_cards(lines: &Vec<impl AsRef<str>>) -> Vec<Card> {
+    lines
+        .iter()
+        .map(|l| {
+            let card_parts = l.as_ref().split(':').collect::<Vec<_>>();
+
+            let id = card_parts[0]
+                .split(" ")
+                .map(|p| p.parse::<u32>())
+                .filter_map(|f| f.ok())
+                .sum();
+
+            let parts = card_parts[1].split("|").collect::<Vec<_>>();
+            Card {
+                id,
+                winning_numbers: HashSet::from_iter(
+                    parts[0]
+                        .trim()
+                        .split(" ")
+                        .map(|num| num.trim().parse::<u32>())
+                        .filter_map(|n| n.ok()),
+                ),
+                numbers: parts[1]
+                    .split(" ")
+                    .map(|num| num.parse::<u32>())
+                    .filter_map(|n| n.ok())
+                    .collect(),
+            }
+        })
+        .collect()
+}
+
+fn part1(lines: &Vec<impl AsRef<str>>) -> u32 {
+    parse_cards(lines)
+        .iter()
+        .map(|card| {
+            card.numbers
+                .iter()
+                .fold(0u32, |acc, num| match card.winning_numbers.contains(num) {
+                    true => acc + 1,
+                    false => acc,
+                })
+        })
+        .filter(|n| n > &&0)
+        .map(|count| 2u32.pow(count - 1))
+        .sum()
 }
 
 fn part2(_lines: &Vec<impl AsRef<str>>) -> u32 {
