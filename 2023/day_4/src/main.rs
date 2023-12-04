@@ -1,3 +1,8 @@
+use std::{
+    collections::{hash_map::RandomState, HashMap, HashSet},
+    ops::RangeInclusive,
+};
+
 pub fn main() {
     let filename = "day_4/src/input.txt";
     let input = fileutils::safe_lines_from_file(filename);
@@ -68,8 +73,49 @@ fn part1(lines: &Vec<impl AsRef<str>>) -> u32 {
         .sum()
 }
 
-fn part2(_lines: &Vec<impl AsRef<str>>) -> u32 {
-    0
+fn count_cards(
+    (_, additional): (&u32, &Option<RangeInclusive<u32>>),
+    cards: &HashMap<u32, Option<RangeInclusive<u32>>, RandomState>,
+) -> u32 {
+    match additional {
+        None => 1,
+        Some(additional_cards) => {
+            1 + additional_cards
+                .clone()
+                .map(|id| count_cards((&id, &cards.get(&id).unwrap()), cards))
+                .sum::<u32>()
+        }
+    }
+}
+
+fn part2(lines: &Vec<impl AsRef<str>>) -> u32 {
+    let all_cards: HashMap<u32, Option<RangeInclusive<u32>>, RandomState> = HashMap::from_iter(
+        parse_cards(lines)
+            .iter()
+            .map(|card| {
+                (
+                    card.id,
+                    card.numbers.iter().fold(0u32, |acc, num| {
+                        match card.winning_numbers.contains(num) {
+                            true => acc + 1,
+                            false => acc,
+                        }
+                    }),
+                )
+            })
+            .map(|(id, count)| {
+                (
+                    id,
+                    if count > 0 {
+                        Some(id + 1..=id + count)
+                    } else {
+                        None
+                    },
+                )
+            }),
+    );
+
+    all_cards.iter().map(|c| count_cards(c, &all_cards)).sum()
 }
 
 #[cfg(test)]
@@ -89,5 +135,11 @@ mod tests {
     fn example_case_part1() {
         let result = part1(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
         assert_eq!(result, 13);
+    }
+
+    #[test]
+    fn example_case_part2() {
+        let result = part2(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
+        assert_eq!(result, 30);
     }
 }
