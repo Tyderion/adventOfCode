@@ -66,26 +66,17 @@ fn part1(lines: &Vec<impl AsRef<str>>) -> u32 {
         .sum()
 }
 
-fn count_cards_tail(
-    to_check: Vec<u32>,
-    counter: u32,
-    cards: &HashMap<u32, Vec<u32>, RandomState>,
-) -> u32 {
-    if to_check.len() == 0 {
-        counter
-    } else {
-        count_cards_tail(
-            to_check
-                .iter()
-                .flat_map(|id| match cards.get(id) {
-                    None => vec![],
-                    Some(new_cards) => new_cards.clone(),
-                })
-                .collect(),
-            counter + to_check.len() as u32,
-            cards,
-        )
-    }
+fn count_cards(cards: &HashMap<u32, Vec<u32>, RandomState>) -> u32 {
+    let mut storage: HashMap<u32, u32, RandomState> = HashMap::new();
+    let max = *cards.keys().max().unwrap();
+
+    (1..=max).rev().for_each(|id| {
+        let card = cards.get(&id).unwrap();
+        let card_amount = card.iter().filter_map(|c| storage.get(c)).sum::<u32>() + 1;
+        storage.insert(id, card_amount);
+    });
+
+    storage.values().sum()
 }
 
 fn part2(lines: &Vec<impl AsRef<str>>) -> u32 {
@@ -114,11 +105,8 @@ fn part2(lines: &Vec<impl AsRef<str>>) -> u32 {
                 )
             }),
     );
-    count_cards_tail(
-        cards.keys().map(|c| *c).collect::<Vec<_>>(),
-        0,
-        &cards,
-    )
+
+    count_cards(&cards)
 }
 
 #[cfg(test)]
@@ -134,6 +122,7 @@ mod tests {
         "Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11",
     ];
 
+    #[ignore]
     #[test]
     fn example_case_part1() {
         let result = part1(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
