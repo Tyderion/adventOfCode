@@ -13,7 +13,69 @@ pub fn main() {
     println!("Sum of part 2: {}", part2_result);
 }
 
-fn part1(_lines: &Vec<impl AsRef<str>>) -> u32 {
+#[derive(Debug)]
+struct DependencyMapEntry {
+    destination_start: u64,
+    source_start: u64,
+    length: u64,
+}
+
+impl DependencyMapEntry {
+    pub fn from(line: impl AsRef<str>) -> Option<DependencyMapEntry> {
+        let parts = line
+            .as_ref()
+            .split(" ")
+            .filter_map(|n| n.parse::<u64>().ok())
+            .collect::<Vec<_>>();
+
+        match parts.len() {
+            3 => Some(DependencyMapEntry {
+                destination_start: parts[0],
+                source_start: parts[1],
+                length: parts[2],
+            }),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct GardenInstructions {
+    seeds: Vec<u64>,
+    dependencies: Vec<Vec<DependencyMapEntry>>,
+}
+
+fn parse_input(lines: &Vec<impl AsRef<str>>) -> GardenInstructions {
+    lines.iter().fold(
+        GardenInstructions {
+            seeds: vec![],
+            dependencies: vec![],
+        },
+        |mut acc, ele| {
+            let line = ele.as_ref();
+            if line.starts_with("seeds: ") {
+                acc.seeds = line
+                    .split(" ")
+                    .filter_map(|n| n.parse::<u64>().ok())
+                    .collect()
+            }
+            if line.is_empty() {
+                acc.dependencies.push(vec![]);
+            } else if !line.contains(":") {
+                if let (Some(map), Some(list)) =
+                    (DependencyMapEntry::from(line), acc.dependencies.last_mut())
+                {
+                    list.push(map)
+                }
+            }
+            acc
+        },
+    )
+}
+
+fn part1(lines: &Vec<impl AsRef<str>>) -> u32 {
+    let instructions = parse_input(lines);
+    println!("{:#?}", instructions);
     0
 }
 
@@ -61,7 +123,6 @@ mod tests {
         "56 93 4",
     ];
 
-    #[ignore]
     #[test]
     fn example_case_part1() {
         let result = part1(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
