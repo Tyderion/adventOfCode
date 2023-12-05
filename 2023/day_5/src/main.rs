@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 pub fn main() {
     let filename = "day_5/src/input.txt";
     let input = fileutils::safe_lines_from_file(filename);
@@ -15,9 +17,8 @@ pub fn main() {
 
 #[derive(Debug)]
 struct DependencyMapEntry {
-    destination_start: u64,
-    source_start: u64,
-    length: u64,
+    destination: u64,
+    source: Range<u64>,
 }
 
 impl DependencyMapEntry {
@@ -30,11 +31,17 @@ impl DependencyMapEntry {
 
         match parts.len() {
             3 => Some(DependencyMapEntry {
-                destination_start: parts[0],
-                source_start: parts[1],
-                length: parts[2],
+                destination: parts[0],
+                source: parts[1]..(parts[1] + parts[2]),
             }),
             _ => None,
+        }
+    }
+
+    fn map(&self, value: u64) -> Option<u64> {
+        match self.source.contains(&value) {
+            true => Some(value - self.source.start + self.destination),
+            false => None,
         }
     }
 }
@@ -73,10 +80,18 @@ fn parse_input(lines: &Vec<impl AsRef<str>>) -> GardenInstructions {
     )
 }
 
-fn part1(lines: &Vec<impl AsRef<str>>) -> u32 {
+fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
     let instructions = parse_input(lines);
-    println!("{:#?}", instructions);
-    0
+    instructions
+        .seeds
+        .iter()
+        .map(|seed| {
+            instructions.dependencies.iter().fold(*seed, |prev, deps| {
+                deps.iter().find_map(|dep| dep.map(prev)).unwrap_or(prev)
+            })
+        })
+        .min()
+        .unwrap()
 }
 
 fn part2(_lines: &Vec<impl AsRef<str>>) -> u32 {
