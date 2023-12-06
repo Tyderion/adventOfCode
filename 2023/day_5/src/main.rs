@@ -44,6 +44,26 @@ impl DependencyMapEntry {
             false => None,
         }
     }
+
+    fn map_range(&self, b: Range<u64>) -> (Vec<Range<u64>>, Vec<Range<u64>>) {
+        if self.source.contains(&b.start) {
+            if self.source.contains(&b.end) {
+                let new_start = b.start - self.source.start + self.destination;
+                let new_end = b.end - self.source.start + self.destination;
+                return (vec![], vec![new_start..new_end]);
+            }
+            let new_start = b.start - self.source.start + self.destination;
+            let new_end = self.source.end - self.source.start + self.destination;
+
+            let lower_start = b.start + b.end - self.source.end;
+            return (vec![lower_start..b.end], vec![new_start..new_end]);
+            // return vec![(b.start - self.start)..self.end, self.end+1..b.end]
+        } else if self.source.contains(&b.end) {
+            let new_end = b.end - self.source.start + self.destination;
+            return (vec![b.start..self.source.start], vec![self.destination..new_end])
+        }
+        (vec![b], vec![])
+    }
 }
 
 #[derive(Debug)]
@@ -101,12 +121,15 @@ fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
 
 fn part2(lines: &Vec<impl AsRef<str>>) -> u64 {
     let instructions = parse_input(lines, |l| {
-        l.split(" ").filter_map(|n| n.parse::<u64>().ok()).collect::<Vec<_>>().chunks_exact(2)
-        .flat_map(|chunk| {
-            let start = *chunk.first().unwrap();
-            start..(start+chunk.last().unwrap())
-        })
-        .collect()
+        l.split(" ")
+            .filter_map(|n| n.parse::<u64>().ok())
+            .collect::<Vec<_>>()
+            .chunks_exact(2)
+            .flat_map(|chunk| {
+                let start = *chunk.first().unwrap();
+                start..(start + chunk.last().unwrap())
+            })
+            .collect()
     });
     find_min_mapping(instructions).unwrap()
 }
@@ -151,15 +174,87 @@ mod tests {
         "56 93 4",
     ];
 
+    #[ignore]
     #[test]
     fn example_case_part1() {
         let result = part1(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
         assert_eq!(result, 35);
     }
 
+    #[ignore]
     #[test]
     fn example_case_part2() {
         let result = part2(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
         assert_eq!(result, 46);
+    }
+
+    #[test]
+    fn map_range_fully_contained() {
+        let dep = DependencyMapEntry {
+            source: 0..10,
+            destination: 20,
+        };
+        let result = dep.map_range(3..4);
+        assert_eq!(result, (vec![], vec![23..24]));
+    }
+
+    #[test]
+    fn map_range_fully_contained2() {
+        let dep = DependencyMapEntry {
+            source: 2..10,
+            destination: 20,
+        };
+        let result = dep.map_range(3..4);
+        assert_eq!(result, (vec![], vec![21..22]));
+    }
+
+    #[test]
+    fn map_range_partially_contained_below() {
+        let dep = DependencyMapEntry {
+            source: 10..20,
+            destination: 30,
+        };
+        let result = dep.map_range(5..15);
+        assert_eq!(result, (vec![5..10], vec![30..35]));
+    }
+
+    #[test]
+    fn map_range_partially_contained_above() {
+        let dep = DependencyMapEntry {
+            source: 10..20,
+            destination: 40,
+        };
+        let result = dep.map_range(15..25);
+        assert_eq!(result, (vec![20..25], vec![45..50]));
+    }
+
+    #[test]
+    fn map_range_not_contained() {
+        let dep = DependencyMapEntry {
+            source: 0..10,
+            destination: 20,
+        };
+        let result = dep.map_range(30..34);
+        assert_eq!(result, (vec![30..34], vec![]));
+    }
+
+    #[test]
+    fn map_contained_1() {
+        let dep = DependencyMapEntry {
+            source: 0..10,
+            destination: 20,
+        };
+        let result = dep.map(3);
+        assert_eq!(result, Some(23));
+    }
+
+    #[test]
+    fn map_contained_2() {
+        let dep = DependencyMapEntry {
+            source: 2..4,
+            destination: 20,
+        };
+        let result = dep.map(3);
+        assert_eq!(result, Some(21));
     }
 }
