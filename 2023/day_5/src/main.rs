@@ -104,41 +104,33 @@ fn find_min_mapping(instructions: GardenInstructions) -> Option<u64> {
             instructions
                 .dependencies
                 .iter()
-                .fold(
-                    vec![seed.clone()],
-                    |unmapped, deps| {
-                        let (mut unmoved, moved) = unmapped
-                            .iter()
-                            .map(|u| {
-                                deps.iter().fold(
-                                    (Some(u.clone()), vec![])
-                                        as (Option<Range<u64>>, Vec<Range<u64>>),
-                                    |(unmapped, mut mapped), dep| match unmapped {
-                                        Some(s) => {
-                                            let (still_unmapped, newly_mapped) = dep.map_range(s);
-                                            mapped.extend(newly_mapped);
-                                            (still_unmapped, mapped)
-                                        }
-                                        None => (None, mapped),
-                                    },
-                                )
-                            })
-                            .fold(
-                                (vec![], vec![]) as (Vec<Range<u64>>, Vec<Range<u64>>),
-                                |(mut u, mut m), ele| {
-                                    if let Some(un) = ele.0 {
-                                        u.push(un);
-                                    };
-                                    m.extend(ele.1);
-
-                                    (u, m)
+                .fold(vec![seed.clone()], |unmapped, deps| {
+                    let (mut unmoved, moved) = unmapped.iter().fold(
+                        (vec![], vec![]) as (Vec<Range<u64>>, Vec<Range<u64>>),
+                        |(mut still_unmapped, mut already_mapped), to_map: &Range<u64>| {
+                            let (not_mapped, newly_mapped) = deps.iter().fold(
+                                (Some(to_map.clone()), vec![] as Vec<Range<u64>>),
+                                |(unmapped, mut mapped), dep| match unmapped {
+                                    Some(s) => {
+                                        let (still_unmapped, newly_mapped) = dep.map_range(s);
+                                        mapped.extend(newly_mapped);
+                                        (still_unmapped, mapped)
+                                    }
+                                    None => (None, mapped),
                                 },
                             );
+                            if let Some(un) = not_mapped {
+                                still_unmapped.push(un);
+                            };
+                            already_mapped.extend(newly_mapped);
 
-                        unmoved.extend(moved);
-                        unmoved
-                    },
-                )
+                            (still_unmapped, already_mapped)
+                        },
+                    );
+
+                    unmoved.extend(moved);
+                    unmoved
+                })
         })
         .flat_map(|s| s)
         .collect::<Vec<_>>();
