@@ -52,7 +52,10 @@ struct GardenInstructions {
     dependencies: Vec<Vec<DependencyMapEntry>>,
 }
 
-fn parse_input(lines: &Vec<impl AsRef<str>>) -> GardenInstructions {
+fn parse_input(
+    lines: &Vec<impl AsRef<str>>,
+    parse_seeds: fn(line: &str) -> Vec<u64>,
+) -> GardenInstructions {
     lines.iter().fold(
         GardenInstructions {
             seeds: vec![],
@@ -61,10 +64,7 @@ fn parse_input(lines: &Vec<impl AsRef<str>>) -> GardenInstructions {
         |mut acc, ele| {
             let line = ele.as_ref();
             if line.starts_with("seeds: ") {
-                acc.seeds = line
-                    .split(" ")
-                    .filter_map(|n| n.parse::<u64>().ok())
-                    .collect()
+                acc.seeds = parse_seeds(line)
             }
             if line.is_empty() {
                 acc.dependencies.push(vec![]);
@@ -80,8 +80,7 @@ fn parse_input(lines: &Vec<impl AsRef<str>>) -> GardenInstructions {
     )
 }
 
-fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
-    let instructions = parse_input(lines);
+fn find_min_mapping(instructions: GardenInstructions) -> Option<u64> {
     instructions
         .seeds
         .iter()
@@ -91,7 +90,13 @@ fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
             })
         })
         .min()
-        .unwrap()
+}
+
+fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
+    let instructions = parse_input(lines, |l| {
+        l.split(" ").filter_map(|n| n.parse::<u64>().ok()).collect()
+    });
+    find_min_mapping(instructions).unwrap()
 }
 
 fn part2(_lines: &Vec<impl AsRef<str>>) -> u32 {
