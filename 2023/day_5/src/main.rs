@@ -38,13 +38,6 @@ impl DependencyMapEntry {
         }
     }
 
-    fn map(&self, value: u64) -> Option<u64> {
-        match self.source.contains(&value) {
-            true => Some(value - self.source.start + self.destination),
-            false => None,
-        }
-    }
-
     fn map_range(&self, b: Range<u64>) -> (Option<Range<u64>>, Option<Range<u64>>) {
         if self.source.contains(&b.start) {
             if self.source.contains(&(b.end - 1)) {
@@ -107,60 +100,48 @@ fn find_min_mapping(instructions: GardenInstructions) -> Option<u64> {
     let mapping = instructions
         .seeds
         .iter()
-        .take(1)
         .map(|seed| {
-            let init: (Vec<Range<u64>>, Vec<Range<u64>>) = (vec![seed.clone()], vec![]);
-            println!("--------------------------------------");
-            println!("Seeds: {:?}", seed);
             instructions
                 .dependencies
                 .iter()
-                // .take(4)
-                .fold(init, |(unmapped, mut mapped), deps| {
-                    // println!("DependencyMaps: {:?}", deps);
-                    let newly_mapped = unmapped
-                        .iter()
-                        .map(|u| {
-                            let init: (Option<Range<u64>>, Vec<Range<u64>>) =
-                                (Some(u.clone()), vec![]);
-                            let after_dependency_maps =
-                                deps.iter().fold(init, |(unmapped, mut mapped), dep| {
-                                    
-                                    if let Some(s) = unmapped.clone() {
-                                        let new_ranges = dep.map_range(s);
-                                        println!("map:{:?}, unmapped {:?}, already-mapped: {:?}, newly-mapped: {:?}", dep, unmapped, mapped, new_ranges);
-                                        mapped.extend(new_ranges.1);
-                                        return (new_ranges.0, mapped)
-                                    }
-                                    (None, mapped)
-                                });
+                .fold(
+                    vec![seed.clone()],
+                    |unmapped, deps| {
+                        let (mut unmoved, moved) = unmapped
+                            .iter()
+                            .map(|u| {
+                                deps.iter().fold(
+                                    (Some(u.clone()), vec![])
+                                        as (Option<Range<u64>>, Vec<Range<u64>>),
+                                    |(unmapped, mut mapped), dep| match unmapped {
+                                        Some(s) => {
+                                            let (still_unmapped, newly_mapped) = dep.map_range(s);
+                                            mapped.extend(newly_mapped);
+                                            (still_unmapped, mapped)
+                                        }
+                                        None => (None, mapped),
+                                    },
+                                )
+                            })
+                            .fold(
+                                (vec![], vec![]) as (Vec<Range<u64>>, Vec<Range<u64>>),
+                                |(mut u, mut m), ele| {
+                                    if let Some(un) = ele.0 {
+                                        u.push(un);
+                                    };
+                                    m.extend(ele.1);
 
-                            println!("after_dependency_maps: {:?}", after_dependency_maps);
-                            after_dependency_maps
-                        })
-                        .fold(
-                            (vec![], vec![]) as (Vec<Range<u64>>, Vec<Range<u64>>),
-                            |(mut u, mut m), ele| {
-                                println!("element: {:?}", ele);
-                                if let Some(un) = ele.0 {
-                                    u.push(un);   
-                                };
-                                m.extend(ele.1);
+                                    (u, m)
+                                },
+                            );
 
-                                (u, m)
-                            },
-                        );
-
-                    mapped.extend(newly_mapped.0);
-                    mapped.extend(newly_mapped.1);
-                    (mapped, vec![])
-                })
-                .0
+                        unmoved.extend(moved);
+                        unmoved
+                    },
+                )
         })
         .flat_map(|s| s)
         .collect::<Vec<_>>();
-
-    println!("{:?}", mapping);
 
     mapping.iter().map(|r| r.start).min()
 }
@@ -190,7 +171,6 @@ fn part2(lines: &Vec<impl AsRef<str>>) -> u64 {
             .collect::<Vec<_>>();
         x
     });
-    // println!("{:#?}", instructions);
     find_min_mapping(instructions).unwrap()
 }
 
