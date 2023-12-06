@@ -47,7 +47,7 @@ impl DependencyMapEntry {
 
     fn map_range(&self, b: Range<u64>) -> (Option<Range<u64>>, Option<Range<u64>>) {
         if self.source.contains(&b.start) {
-            if self.source.contains(&b.end) {
+            if self.source.contains(&(b.end - 1)) {
                 let new_start = b.start - self.source.start + self.destination;
                 let new_end = b.end - self.source.start + self.destination;
                 return (None, Some(new_start..new_end));
@@ -115,18 +115,22 @@ fn find_min_mapping(instructions: GardenInstructions) -> Option<u64> {
             instructions
                 .dependencies
                 .iter()
-                // .take(3)
+                // .take(4)
                 .fold(init, |(unmapped, mut mapped), deps| {
                     // println!("DependencyMaps: {:?}", deps);
                     let newly_mapped = unmapped
                         .iter()
                         .map(|u| {
-                            let init: (Option<Range<u64>>, Option<Range<u64>>) =
-                                (Some(u.clone()), None);
+                            let init: (Option<Range<u64>>, Vec<Range<u64>>) =
+                                (Some(u.clone()), vec![]);
                             let after_dependency_maps =
-                                deps.iter().fold(init, |(unmapped, mapped), dep| {
-                                    if let Some(s) = unmapped {
-                                        return dep.map_range(s);
+                                deps.iter().fold(init, |(unmapped, mut mapped), dep| {
+                                    
+                                    if let Some(s) = unmapped.clone() {
+                                        let new_ranges = dep.map_range(s);
+                                        println!("map:{:?}, unmapped {:?}, already-mapped: {:?}, newly-mapped: {:?}", dep, unmapped, mapped, new_ranges);
+                                        mapped.extend(new_ranges.1);
+                                        return (new_ranges.0, mapped)
                                     }
                                     (None, mapped)
                                 });
@@ -137,15 +141,12 @@ fn find_min_mapping(instructions: GardenInstructions) -> Option<u64> {
                         .fold(
                             (vec![], vec![]) as (Vec<Range<u64>>, Vec<Range<u64>>),
                             |(mut u, mut m), ele| {
-                                match ele {
-                                    (None, None) => (),
-                                    (None, Some(r)) => m.push(r),
-                                    (Some(r), None) => u.push(r),
-                                    (Some(r), Some(s)) => {
-                                        u.push(r);
-                                        m.push(s);
-                                    }
-                                }
+                                println!("element: {:?}", ele);
+                                if let Some(un) = ele.0 {
+                                    u.push(un);   
+                                };
+                                m.extend(ele.1);
+
                                 (u, m)
                             },
                         );
@@ -284,6 +285,16 @@ mod tests {
         };
         let result = dep.map_range(15..25);
         assert_eq!(result, (Some(20..25), Some(45..50)));
+    }
+
+    #[test]
+    fn map_range_test_error() {
+        let dep = DependencyMapEntry {
+            source: 25..95,
+            destination: 18,
+        };
+        let result = dep.map_range(81..95);
+        assert_eq!(result, (None, Some(74..88)));
     }
 
     #[test]
