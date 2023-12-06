@@ -50,7 +50,6 @@ impl DependencyMapEntry {
 
             let lower_start = b.start + b.end - self.source.end;
             return (Some(lower_start..b.end), Some(new_start..new_end));
-            // return vec![(b.start - self.start)..self.end, self.end+1..b.end]
         } else if self.source.contains(&b.end) {
             let new_end = b.end - self.source.start + self.destination;
             return (
@@ -106,8 +105,13 @@ fn find_min_mapping(instructions: GardenInstructions) -> Option<u64> {
                 .iter()
                 .fold(vec![seed.clone()], |unmapped, deps| {
                     let (mut unmoved, moved) = unmapped.iter().fold(
+                        // Take each not yet mapped range and map it according to the depencency map into
+                        // two lists of moved (e.g. mapped by dependency) or unmoved (values are not specified in the dependency map)
                         (vec![], vec![]) as (Vec<Range<u64>>, Vec<Range<u64>>),
                         |(mut still_unmapped, mut already_mapped), to_map: &Range<u64>| {
+                            // try to map all unmapped ranges by trying through all specified mapping entries from the dependencymap
+                            // Keep unmatched ranges as is
+                            // map all parts of the not mapped range that can be mapped by this dependency step
                             let (not_mapped, newly_mapped) = deps.iter().fold(
                                 (Some(to_map.clone()), vec![] as Vec<Range<u64>>),
                                 |(unmapped, mut mapped), dep| match unmapped {
@@ -124,6 +128,8 @@ fn find_min_mapping(instructions: GardenInstructions) -> Option<u64> {
                             };
                             already_mapped.extend(newly_mapped);
 
+                            // those that are not part of the dependency map entry get tried with the next entry
+                            // Or at the end stay unmapped
                             (still_unmapped, already_mapped)
                         },
                     );
