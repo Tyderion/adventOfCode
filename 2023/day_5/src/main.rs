@@ -104,17 +104,26 @@ fn parse_input(
 }
 
 fn find_min_mapping(instructions: GardenInstructions) -> Option<u64> {
+    let init: (Vec<Range<u64>>, Vec<Range<u64>>) = (instructions.seeds, vec![]);
     let x = instructions
         .dependencies
         .iter()
-        .fold((instructions.seeds, vec![]), |(unmapped, mapped), deps| {
-            unmapped.iter().map(|unmap| {
-                deps.iter().map(|dep| dep.map_range(*unmap)).unwrap_or(prev)
-            })
-            
+        .fold(init, |(unmapped, mapped), deps| {
+            let empty: (Vec<Range<u64>>, Vec<Range<u64>>) = (vec![], vec![]);
+            let x = deps
+                .iter()
+                .flat_map(|dep| unmapped.iter().map(|u| dep.map_range(u.start..u.end)))
+                .fold(empty, |(mut um, mut m), (a, b)| {
+                    um.extend(a);
+                    m.extend(b);
+                    (um, m)
+                });
+
+            println!("{:#?}", x);
+            x
         });
 
-    0
+    Some(0)
 
     // instructions
     //     .seeds
@@ -134,6 +143,7 @@ fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
             .map(|seed| seed..seed)
             .collect()
     });
+    // should return 31599214
     find_min_mapping(instructions).unwrap()
 }
 
@@ -193,7 +203,6 @@ mod tests {
         "56 93 4",
     ];
 
-    #[ignore]
     #[test]
     fn example_case_part1() {
         let result = part1(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
