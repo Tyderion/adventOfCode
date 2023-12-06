@@ -28,8 +28,7 @@ fn parse_p1(lines: &Vec<impl AsRef<str>>) -> Vec<(u64, u64)> {
 fn compute_options(time: u64, distance: u64) -> u64 {
     let min_time = (1..time)
         .find_map(|t| {
-            let d = t * (time - t);
-            if d > distance {
+            if t * (time - t) > distance {
                 Some(t)
             } else {
                 None
@@ -40,8 +39,7 @@ fn compute_options(time: u64, distance: u64) -> u64 {
     let max_time = (1..time)
         .rev()
         .find_map(|t| {
-            let d = t * (time - t);
-            if d > distance {
+            if t * (time - t) > distance {
                 Some(t)
             } else {
                 None
@@ -63,31 +61,24 @@ fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
 fn parse_p2(lines: &Vec<impl AsRef<str>>) -> (u64, u64) {
     let time = lines[0]
         .as_ref()
-        .split(" ")
-        .filter(|s| !s.is_empty())
-        .collect::<Vec<_>>()
-        .join("")
-        .to_string()
+        .replace(" ", "")
         .split(":")
         .filter_map(|t| t.parse::<u64>().ok())
         .sum();
 
     let distance = lines[1]
         .as_ref()
-        .split(" ")
-        .filter(|s| !s.is_empty())
-        .collect::<Vec<_>>()
-        .join("")
+        .replace(" ", "")
         .to_string()
         .split(":")
         .filter_map(|t| t.parse::<u64>().ok())
         .sum();
+
     (time, distance)
 }
 
 fn part2(lines: &Vec<impl AsRef<str>>) -> u64 {
     let (time, distance) = parse_p2(lines);
-    println!("race {:?}", (time, distance));
     compute_options(time, distance)
 }
 
