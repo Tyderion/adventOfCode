@@ -45,27 +45,27 @@ impl DependencyMapEntry {
         }
     }
 
-    fn map_range(&self, b: Range<u64>) -> (Vec<Range<u64>>, Vec<Range<u64>>) {
+    fn map_range(&self, b: Range<u64>) -> (Option<Range<u64>>, Option<Range<u64>>) {
         if self.source.contains(&b.start) {
             if self.source.contains(&b.end) {
                 let new_start = b.start - self.source.start + self.destination;
                 let new_end = b.end - self.source.start + self.destination;
-                return (vec![], vec![new_start..new_end]);
+                return (None, Some(new_start..new_end));
             }
             let new_start = b.start - self.source.start + self.destination;
             let new_end = self.source.end - self.source.start + self.destination;
 
             let lower_start = b.start + b.end - self.source.end;
-            return (vec![lower_start..b.end], vec![new_start..new_end]);
+            return (Some(lower_start..b.end), Some(new_start..new_end));
             // return vec![(b.start - self.start)..self.end, self.end+1..b.end]
         } else if self.source.contains(&b.end) {
             let new_end = b.end - self.source.start + self.destination;
             return (
-                vec![b.start..self.source.start],
-                vec![self.destination..new_end],
+                Some(b.start..self.source.start),
+                Some(self.destination..new_end),
             );
         }
-        (vec![b], vec![])
+        (Some(b), None)
     }
 }
 
@@ -104,36 +104,60 @@ fn parse_input(
 }
 
 fn find_min_mapping(instructions: GardenInstructions) -> Option<u64> {
-    let init: (Vec<Range<u64>>, Vec<Range<u64>>) = (instructions.seeds, vec![]);
-    let x = instructions
-        .dependencies
+    let mapping = instructions
+        .seeds
         .iter()
-        .fold(init, |(unmapped, mapped), deps| {
-            let empty: (Vec<Range<u64>>, Vec<Range<u64>>) = (vec![], vec![]);
-            let x = deps
+        // .take(1)
+        .map(|seed| {
+            let init: (Vec<Range<u64>>, Vec<Range<u64>>) = (vec![seed.clone()], vec![]);
+            instructions
+                .dependencies
                 .iter()
-                .flat_map(|dep| unmapped.iter().map(|u| dep.map_range(u.start..u.end)))
-                .fold(empty, |(mut um, mut m), (a, b)| {
-                    um.extend(a);
-                    m.extend(b);
-                    (um, m)
-                });
+                // .take(3)
+                .fold(init, |(unmapped, mut mapped), deps| {
+                    // println!("DependencyMaps: {:?}", deps);
+                    let newly_mapped = unmapped
+                        .iter()
+                        .map(|u| {
+                            let init: (Option<Range<u64>>, Option<Range<u64>>) =
+                                (Some(u.clone()), None);
+                            let after_dependency_maps =
+                                deps.iter().fold(init, |(unmapped, mapped), dep| {
+                                    if let Some(s) = unmapped {
+                                        return dep.map_range(s);
+                                    }
+                                    (None, mapped)
+                                });
 
-            println!("{:#?}", x);
-            x
-        });
+                            // println!("after_dependency_maps: {:#?}", after_dependency_maps);
+                            after_dependency_maps
+                        })
+                        .fold(
+                            (vec![], vec![]) as (Vec<Range<u64>>, Vec<Range<u64>>),
+                            |(mut u, mut m), ele| {
+                                match ele {
+                                    (None, None) => (),
+                                    (None, Some(r)) => m.push(r),
+                                    (Some(r), None) => u.push(r),
+                                    (Some(r), Some(s)) => {
+                                        u.push(r);
+                                        m.push(s);
+                                    }
+                                }
+                                (u, m)
+                            },
+                        );
 
-    Some(0)
+                    mapped.extend(newly_mapped.0);
+                    mapped.extend(newly_mapped.1);
+                    (mapped, vec![])
+                })
+                .0
+        })
+        .filter_map(|rs| rs.iter().map(|r| r.start).min())
+        .min();
 
-    // instructions
-    //     .seeds
-    //     .iter()
-    //     .map(|seed| {
-    //         instructions.dependencies.iter().fold(*seed, |prev, deps| {
-    //             deps.iter().find_map(|dep| dep.map(prev)).unwrap_or(prev)
-    //         })
-    //     })
-    //     .min()
+    mapping
 }
 
 fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
@@ -148,19 +172,21 @@ fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
 }
 
 fn part2(lines: &Vec<impl AsRef<str>>) -> u64 {
-    // let instructions = parse_input(lines, |l| {
-    //     l.split(" ")
-    //         .filter_map(|n| n.parse::<u64>().ok())
-    //         .collect::<Vec<_>>()
-    //         .chunks_exact(2)
-    //         .flat_map(|chunk| {
-    //             let start = *chunk.first().unwrap();
-    //             start..(start + chunk.last().unwrap())
-    //         })
-    //         .collect()
-    // });
-    // find_min_mapping(instructions).unwrap()
-    0
+    let instructions = parse_input(lines, |l| {
+        let x = l.split(" ")
+            .filter_map(|n| n.parse::<u64>().ok())
+            .collect::<Vec<_>>()
+            .chunks_exact(2)
+            .map(|chunk| {
+                let start = *chunk.first().unwrap();
+                start..(start + chunk.last().unwrap())
+            })
+            .collect::<Vec<_>>();
+        x
+    });
+    // println!("{:#?}", instructions);
+    find_min_mapping(instructions).unwrap()
+    
 }
 
 #[cfg(test)]
@@ -209,7 +235,6 @@ mod tests {
         assert_eq!(result, 35);
     }
 
-    #[ignore]
     #[test]
     fn example_case_part2() {
         let result = part2(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
@@ -223,7 +248,7 @@ mod tests {
             destination: 20,
         };
         let result = dep.map_range(3..4);
-        assert_eq!(result, (vec![], vec![23..24]));
+        assert_eq!(result, (None, Some(23..24)));
     }
 
     #[test]
@@ -233,7 +258,7 @@ mod tests {
             destination: 20,
         };
         let result = dep.map_range(3..4);
-        assert_eq!(result, (vec![], vec![21..22]));
+        assert_eq!(result, (None, Some(21..22)));
     }
 
     #[test]
@@ -243,7 +268,7 @@ mod tests {
             destination: 30,
         };
         let result = dep.map_range(5..15);
-        assert_eq!(result, (vec![5..10], vec![30..35]));
+        assert_eq!(result, (Some(5..10), Some(30..35)));
     }
 
     #[test]
@@ -253,7 +278,7 @@ mod tests {
             destination: 40,
         };
         let result = dep.map_range(15..25);
-        assert_eq!(result, (vec![20..25], vec![45..50]));
+        assert_eq!(result, (Some(20..25), Some(45..50)));
     }
 
     #[test]
@@ -263,7 +288,7 @@ mod tests {
             destination: 20,
         };
         let result = dep.map_range(30..34);
-        assert_eq!(result, (vec![30..34], vec![]));
+        assert_eq!(result, (Some(30..34), None));
     }
 
     #[test]
