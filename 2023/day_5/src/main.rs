@@ -60,7 +60,10 @@ impl DependencyMapEntry {
             // return vec![(b.start - self.start)..self.end, self.end+1..b.end]
         } else if self.source.contains(&b.end) {
             let new_end = b.end - self.source.start + self.destination;
-            return (vec![b.start..self.source.start], vec![self.destination..new_end])
+            return (
+                vec![b.start..self.source.start],
+                vec![self.destination..new_end],
+            );
         }
         (vec![b], vec![])
     }
@@ -68,13 +71,13 @@ impl DependencyMapEntry {
 
 #[derive(Debug)]
 struct GardenInstructions {
-    seeds: Vec<u64>,
+    seeds: Vec<Range<u64>>,
     dependencies: Vec<Vec<DependencyMapEntry>>,
 }
 
 fn parse_input(
     lines: &Vec<impl AsRef<str>>,
-    parse_seeds: fn(line: &str) -> Vec<u64>,
+    parse_seeds: fn(line: &str) -> Vec<Range<u64>>,
 ) -> GardenInstructions {
     lines.iter().fold(
         GardenInstructions {
@@ -101,37 +104,53 @@ fn parse_input(
 }
 
 fn find_min_mapping(instructions: GardenInstructions) -> Option<u64> {
-    instructions
-        .seeds
+    let x = instructions
+        .dependencies
         .iter()
-        .map(|seed| {
-            instructions.dependencies.iter().fold(*seed, |prev, deps| {
-                deps.iter().find_map(|dep| dep.map(prev)).unwrap_or(prev)
+        .fold((instructions.seeds, vec![]), |(unmapped, mapped), deps| {
+            unmapped.iter().map(|unmap| {
+                deps.iter().map(|dep| dep.map_range(*unmap)).unwrap_or(prev)
             })
-        })
-        .min()
+            
+        });
+
+    0
+
+    // instructions
+    //     .seeds
+    //     .iter()
+    //     .map(|seed| {
+    //         instructions.dependencies.iter().fold(*seed, |prev, deps| {
+    //             deps.iter().find_map(|dep| dep.map(prev)).unwrap_or(prev)
+    //         })
+    //     })
+    //     .min()
 }
 
 fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
     let instructions = parse_input(lines, |l| {
-        l.split(" ").filter_map(|n| n.parse::<u64>().ok()).collect()
+        l.split(" ")
+            .filter_map(|n| n.parse::<u64>().ok())
+            .map(|seed| seed..seed)
+            .collect()
     });
     find_min_mapping(instructions).unwrap()
 }
 
 fn part2(lines: &Vec<impl AsRef<str>>) -> u64 {
-    let instructions = parse_input(lines, |l| {
-        l.split(" ")
-            .filter_map(|n| n.parse::<u64>().ok())
-            .collect::<Vec<_>>()
-            .chunks_exact(2)
-            .flat_map(|chunk| {
-                let start = *chunk.first().unwrap();
-                start..(start + chunk.last().unwrap())
-            })
-            .collect()
-    });
-    find_min_mapping(instructions).unwrap()
+    // let instructions = parse_input(lines, |l| {
+    //     l.split(" ")
+    //         .filter_map(|n| n.parse::<u64>().ok())
+    //         .collect::<Vec<_>>()
+    //         .chunks_exact(2)
+    //         .flat_map(|chunk| {
+    //             let start = *chunk.first().unwrap();
+    //             start..(start + chunk.last().unwrap())
+    //         })
+    //         .collect()
+    // });
+    // find_min_mapping(instructions).unwrap()
+    0
 }
 
 #[cfg(test)]
