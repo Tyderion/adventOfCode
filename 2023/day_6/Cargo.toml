@@ -1,20 +1,11 @@
 [package]
-name = "advent_of_code_2022"
+name = "day_6"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-
-[workspace]
-members = [
-    "day_1",
-    "day_2",
-    "day_3",
-    "day_4",
-    "day_6",
-]
-default-members = [
-    "day_6",
-]
+fileutils = { path = "../fileutils" }
+[dev-dependencies]
+test-case = "3.3.1"
