@@ -13,29 +13,50 @@ pub fn main() {
     println!("Sum of part 2: {}", part2_result);
 }
 
-fn parse_p1(lines: &Vec<impl AsRef<str>>) -> Vec<(u32, u32)> {
+fn parse_p1(lines: &Vec<impl AsRef<str>>) -> Vec<(u64, u64)> {
     let times = lines[0]
         .as_ref()
         .split(" ")
-        .filter_map(|t| t.parse::<u32>().ok());
+        .filter_map(|t| t.parse::<u64>().ok());
     let distances = lines[1]
         .as_ref()
         .split(" ")
-        .filter_map(|t| t.parse::<u32>().ok());
+        .filter_map(|t| t.parse::<u64>().ok());
     times.zip(distances).collect()
 }
 
-fn part1(lines: &Vec<impl AsRef<str>>) -> usize {
+fn compute_options(time: u64, distance: u64) -> u64 {
+    let min_time = (1..time)
+        .find_map(|t| {
+            let d = t * (time - t);
+            if d > distance {
+                Some(t)
+            } else {
+                None
+            }
+        })
+        .unwrap();
+
+    let max_time = (1..time)
+        .rev()
+        .find_map(|t| {
+            let d = t * (time - t);
+            if d > distance {
+                Some(t)
+            } else {
+                None
+            }
+        })
+        .unwrap();
+
+    max_time - min_time + 1
+}
+
+fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
     let races = parse_p1(lines);
     races
         .iter()
-        .map(|(time, distance)| {
-            (1..*time)
-                .map(|t| t * (time - t))
-                .filter(|d| d > distance)
-                .collect::<Vec<_>>()
-                .len()
-        })
+        .map(|(time, distance)| compute_options(*time, *distance))
         .product()
 }
 
@@ -61,37 +82,13 @@ fn parse_p2(lines: &Vec<impl AsRef<str>>) -> (u64, u64) {
         .split(":")
         .filter_map(|t| t.parse::<u64>().ok())
         .sum();
-    println!("Distance: {:?}", distance);
     (time, distance)
 }
 
 fn part2(lines: &Vec<impl AsRef<str>>) -> u64 {
     let (time, distance) = parse_p2(lines);
     println!("race {:?}", (time, distance));
-    let min_time = (1..time)
-        .find_map(|t| {
-            let d = t * (time - t);
-            if d > distance {
-                Some(t)
-            } else {
-                None
-            }
-        })
-        .unwrap();
-
-    let max_time = (1..time)
-        .rev()
-        .find_map(|t| {
-            let d = t * (time - t);
-            if d > distance {
-                Some(t)
-            } else {
-                None
-            }
-        })
-        .unwrap();
-    
-    max_time - min_time + 1
+    compute_options(time, distance)
 }
 
 #[cfg(test)]
