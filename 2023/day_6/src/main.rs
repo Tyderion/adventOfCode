@@ -26,26 +26,16 @@ fn parse_p1(lines: &Vec<impl AsRef<str>>) -> Vec<(u64, u64)> {
 }
 
 fn compute_options(time: u64, distance: u64) -> u64 {
-    let min_time = (1..time)
-        .find_map(|t| {
-            if t * (time - t) > distance {
-                Some(t)
-            } else {
-                None
-            }
-        })
-        .unwrap();
+    let find_valid_chargin_time = |t: u64| -> Option<u64> {
+        if t * (time - t) > distance {
+            Some(t)
+        } else {
+            None
+        }
+    };
 
-    let max_time = (1..time)
-        .rev()
-        .find_map(|t| {
-            if t * (time - t) > distance {
-                Some(t)
-            } else {
-                None
-            }
-        })
-        .unwrap();
+    let min_time = (1..time).find_map(find_valid_chargin_time).unwrap();
+    let max_time = (1..time).rev().find_map(find_valid_chargin_time).unwrap();
 
     max_time - min_time + 1
 }
