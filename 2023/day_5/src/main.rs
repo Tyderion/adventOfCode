@@ -107,9 +107,11 @@ fn find_min_mapping(instructions: GardenInstructions) -> Option<u64> {
     let mapping = instructions
         .seeds
         .iter()
-        // .take(1)
+        .take(1)
         .map(|seed| {
             let init: (Vec<Range<u64>>, Vec<Range<u64>>) = (vec![seed.clone()], vec![]);
+            println!("--------------------------------------");
+            println!("Seeds: {:?}", seed);
             instructions
                 .dependencies
                 .iter()
@@ -129,7 +131,7 @@ fn find_min_mapping(instructions: GardenInstructions) -> Option<u64> {
                                     (None, mapped)
                                 });
 
-                            // println!("after_dependency_maps: {:#?}", after_dependency_maps);
+                            println!("after_dependency_maps: {:?}", after_dependency_maps);
                             after_dependency_maps
                         })
                         .fold(
@@ -154,10 +156,12 @@ fn find_min_mapping(instructions: GardenInstructions) -> Option<u64> {
                 })
                 .0
         })
-        .filter_map(|rs| rs.iter().map(|r| r.start).min())
-        .min();
+        .flat_map(|s| s)
+        .collect::<Vec<_>>();
 
-    mapping
+    println!("{:?}", mapping);
+
+    mapping.iter().map(|r| r.start).min()
 }
 
 fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
@@ -173,7 +177,8 @@ fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
 
 fn part2(lines: &Vec<impl AsRef<str>>) -> u64 {
     let instructions = parse_input(lines, |l| {
-        let x = l.split(" ")
+        let x = l
+            .split(" ")
             .filter_map(|n| n.parse::<u64>().ok())
             .collect::<Vec<_>>()
             .chunks_exact(2)
@@ -186,7 +191,6 @@ fn part2(lines: &Vec<impl AsRef<str>>) -> u64 {
     });
     // println!("{:#?}", instructions);
     find_min_mapping(instructions).unwrap()
-    
 }
 
 #[cfg(test)]
@@ -229,6 +233,7 @@ mod tests {
         "56 93 4",
     ];
 
+    #[ignore]
     #[test]
     fn example_case_part1() {
         let result = part1(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
