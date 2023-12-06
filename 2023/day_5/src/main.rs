@@ -99,8 +99,16 @@ fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
     find_min_mapping(instructions).unwrap()
 }
 
-fn part2(_lines: &Vec<impl AsRef<str>>) -> u32 {
-    0
+fn part2(lines: &Vec<impl AsRef<str>>) -> u64 {
+    let instructions = parse_input(lines, |l| {
+        l.split(" ").filter_map(|n| n.parse::<u64>().ok()).collect::<Vec<_>>().chunks_exact(2)
+        .flat_map(|chunk| {
+            let start = *chunk.first().unwrap();
+            start..(start+chunk.last().unwrap())
+        })
+        .collect()
+    });
+    find_min_mapping(instructions).unwrap()
 }
 
 #[cfg(test)]
@@ -147,5 +155,11 @@ mod tests {
     fn example_case_part1() {
         let result = part1(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
         assert_eq!(result, 35);
+    }
+
+    #[test]
+    fn example_case_part2() {
+        let result = part2(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
+        assert_eq!(result, 46);
     }
 }
