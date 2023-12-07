@@ -1,10 +1,10 @@
 mod bid;
-mod bidv1;
-mod bidv2;
+mod bidp1;
+mod bidp2;
 
 use bid::WithBid;
-use bidv1::BidV1;
-use bidv2::BidV2;
+use bidp1::BidP1;
+use bidp2::BidP2;
 
 pub fn main() {
     let filename = "day_7/src/input.txt";
@@ -21,7 +21,7 @@ pub fn main() {
     println!("Sum of part 2: {}", part2_result);
 }
 
-fn compute_games<T>(lines: &Vec<impl AsRef<str>>) -> u32
+fn compute_total_winnings<T>(lines: &Vec<impl AsRef<str>>) -> u32
 where
     T: PartialEq + PartialOrd + Eq + Ord + for<'a> From<&'a str> + WithBid,
 {
@@ -38,11 +38,11 @@ where
 }
 
 fn part1(lines: &Vec<impl AsRef<str>>) -> u32 {
-    compute_games::<BidV1>(lines)
+    compute_total_winnings::<BidP1>(lines)
 }
 
 fn part2(lines: &Vec<impl AsRef<str>>) -> u32 {
-    compute_games::<BidV2>(lines)
+    compute_total_winnings::<BidP2>(lines)
 }
 
 #[cfg(test)]

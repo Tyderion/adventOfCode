@@ -1,4 +1,4 @@
-use std::cmp::{Ordering, Reverse};
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
 use itertools::Itertools;
@@ -7,7 +7,6 @@ use crate::bid::WithBid;
 
 #[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Hash, Copy, Clone)]
 enum Card {
-    Joker,
     Two,
     Three,
     Four,
@@ -17,6 +16,7 @@ enum Card {
     Eight,
     Nine,
     Ten,
+    Jack,
     Queen,
     King,
     Ace,
@@ -28,7 +28,7 @@ impl From<char> for Card {
             'A' => Card::Ace,
             'K' => Card::King,
             'Q' => Card::Queen,
-            'J' => Card::Joker,
+            'J' => Card::Jack,
             'T' => Card::Ten,
             '9' => Card::Nine,
             '8' => Card::Eight,
@@ -60,28 +60,17 @@ impl From<&str> for Hand {
             panic!("Not a valid hand {}", s)
         }
         let cards = s.chars().map(Card::from).collect::<Vec<_>>();
-        let mut sorted_cards = cards.clone();
-        sorted_cards.sort_by_key(|s| Reverse(*s));
-
         let card_counts =
-            sorted_cards
+            cards
                 .iter()
                 .fold(HashMap::new() as HashMap<Card, u32>, |mut acc, card| {
-                    if *card == Card::Joker && acc.len() > 0 {
-                        let clone = acc.clone();
-                        // sort by most present and then by most valuable card
-                        let mut existing = clone.iter().collect::<Vec<_>>();
-                        existing.sort_by_key(|v| Reverse((v.1, v.0)));
-                        *acc.entry(*existing.first().unwrap().0).or_default() += 1;
-                    } else {
-                        *acc.entry(*card).or_default() += 1;
-                    }
-
+                    *acc.entry(*card).or_default() += 1;
                     acc
                 });
 
         let mut card_counts = card_counts.iter().collect::<Vec<_>>();
         card_counts.sort_by_key(|s| std::cmp::Reverse(*s.1));
+        // println!("Got cards {:#?} and counts {:#?}", cards, card_counts);
 
         match card_counts.iter().map(|c| c.1).take(2).collect::<Vec<_>>()[..] {
             [1, _] => Hand::High(cards.try_into().unwrap()),
@@ -123,28 +112,28 @@ impl PartialOrd for Hand {
 }
 
 #[derive(Debug, Eq, PartialEq, Ord)]
-pub struct BidV2 {
+pub struct BidP1 {
     hand: Hand,
     pub bid: u32,
 }
 
-impl PartialOrd for BidV2 {
+impl PartialOrd for BidP1 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.hand.partial_cmp(&other.hand)
     }
 }
 
-impl From<&str> for BidV2 {
+impl From<&str> for BidP1 {
     fn from(value: &str) -> Self {
         let (hand, bid) = value.split(" ").collect_tuple().unwrap();
-        BidV2 {
+        BidP1 {
             hand: Hand::from(hand),
             bid: bid.parse::<u32>().unwrap(),
         }
     }
 }
 
-impl WithBid for BidV2 {
+impl WithBid for BidP1 {
     fn get_bid(&self) -> u32 {
         self.bid
     }
@@ -165,9 +154,9 @@ mod tests {
 
     #[test]
     fn test_parse_bid() {
-        let result = BidV2::from("32T3K 765");
+        let result = BidP1::from("32T3K 765");
         assert_eq!(
-            BidV2 {
+            BidP1 {
                 hand: Hand::Pair([Card::Three, Card::Two, Card::Ten, Card::Three, Card::King]),
                 bid: 765
             },
