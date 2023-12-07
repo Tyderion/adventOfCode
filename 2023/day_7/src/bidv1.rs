@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use itertools::Itertools;
 
 #[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Hash, Copy, Clone)]
-pub enum Card {
+enum Card {
     Two,
     Three,
     Four,
@@ -42,7 +42,7 @@ impl From<char> for Card {
 }
 
 #[derive(Debug, PartialEq, Eq, Ord, Hash, Copy, Clone)]
-pub enum Hand {
+enum Hand {
     FiveOfAKind([Card; 5]),
     FourOfAKind([Card; 5]),
     FullHouse([Card; 5]),
@@ -70,17 +70,14 @@ impl From<&str> for Hand {
         card_counts.sort_by_key(|s| std::cmp::Reverse(*s.1));
         // println!("Got cards {:#?} and counts {:#?}", cards, card_counts);
 
-        match card_counts.iter().map(|c| c.1).take(2).collect_tuple() {
-            Some((1, _)) => Hand::High(cards.try_into().unwrap()),
-            Some((2, 2)) => Hand::TwoPairs(cards.try_into().unwrap()),
-            Some((2, _)) => Hand::Pair(cards.try_into().unwrap()),
-            Some((3, 2)) => Hand::FullHouse(cards.try_into().unwrap()),
-            Some((3, _)) => Hand::ThreeOfAKind(cards.try_into().unwrap()),
-            Some((4, _)) => Hand::FourOfAKind(cards.try_into().unwrap()),
-            None => match card_counts.first().map(|c| c.1) {
-                Some(5) => Hand::FiveOfAKind(cards.try_into().unwrap()),
-                _ => panic!("impossible count {:?}", card_counts),
-            },
+        match card_counts.iter().map(|c| c.1).take(2).collect::<Vec<_>>()[..] {
+            [1, _] => Hand::High(cards.try_into().unwrap()),
+            [2, 2] => Hand::TwoPairs(cards.try_into().unwrap()),
+            [2, _] => Hand::Pair(cards.try_into().unwrap()),
+            [3, 2] => Hand::FullHouse(cards.try_into().unwrap()),
+            [3, _] => Hand::ThreeOfAKind(cards.try_into().unwrap()),
+            [4, _] => Hand::FourOfAKind(cards.try_into().unwrap()),
+            [5] => Hand::FiveOfAKind(cards.try_into().unwrap()),
             _ => panic!("IMPOSSIBLE {:?}", card_counts),
         }
     }
@@ -113,21 +110,21 @@ impl PartialOrd for Hand {
 }
 
 #[derive(Debug, Eq, PartialEq, Ord)]
-pub struct Bid {
-    pub hand: Hand,
+pub struct BidV1 {
+    hand: Hand,
     pub bid: u32,
 }
 
-impl PartialOrd for Bid {
+impl PartialOrd for BidV1 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.hand.partial_cmp(&other.hand)
     }
 }
 
-impl From<&str> for Bid {
+impl From<&str> for BidV1 {
     fn from(value: &str) -> Self {
         let (hand, bid) = value.split(" ").collect_tuple().unwrap();
-        Bid {
+        BidV1 {
             hand: Hand::from(hand),
             bid: bid.parse::<u32>().unwrap(),
         }
@@ -149,9 +146,9 @@ mod tests {
 
     #[test]
     fn test_parse_bid() {
-        let result = Bid::from("32T3K 765");
+        let result = BidV1::from("32T3K 765");
         assert_eq!(
-            Bid {
+            BidV1 {
                 hand: Hand::Pair([Card::Three, Card::Two, Card::Ten, Card::Three, Card::King]),
                 bid: 765
             },
