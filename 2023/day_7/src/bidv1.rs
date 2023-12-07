@@ -3,6 +3,8 @@ use std::collections::HashMap;
 
 use itertools::Itertools;
 
+use crate::bid::WithBid;
+
 #[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Hash, Copy, Clone)]
 enum Card {
     Two,
@@ -128,6 +130,12 @@ impl From<&str> for BidV1 {
             hand: Hand::from(hand),
             bid: bid.parse::<u32>().unwrap(),
         }
+    }
+}
+
+impl WithBid for BidV1 {
+    fn get_bid(&self) -> u32 {
+        self.bid
     }
 }
 

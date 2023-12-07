@@ -1,6 +1,8 @@
+mod bid;
 mod bidv1;
 mod bidv2;
 
+use bid::WithBid;
 use bidv1::BidV1;
 use bidv2::BidV2;
 
@@ -19,30 +21,28 @@ pub fn main() {
     println!("Sum of part 2: {}", part2_result);
 }
 
-fn part1(lines: &Vec<impl AsRef<str>>) -> u32 {
+fn compute_games<T>(lines: &Vec<impl AsRef<str>>) -> u32
+where
+    T: PartialEq + PartialOrd + Eq + Ord + for<'a> From<&'a str> + WithBid,
+{
     let mut bids = lines
         .iter()
-        .map(|l| BidV1::from(l.as_ref()))
-        .collect::<Vec<BidV1>>();
+        .map(|l| T::from(l.as_ref()))
+        .collect::<Vec<T>>();
 
     bids.sort();
     bids.iter()
         .enumerate()
-        .map(|(index, bid)| (index as u32 + 1) * bid.bid)
+        .map(|(index, bid)| (index as u32 + 1) * bid.get_bid())
         .sum()
 }
 
-fn part2(lines: &Vec<impl AsRef<str>>) -> u32 {
-    let mut bids = lines
-        .iter()
-        .map(|l| BidV2::from(l.as_ref()))
-        .collect::<Vec<BidV2>>();
+fn part1(lines: &Vec<impl AsRef<str>>) -> u32 {
+    compute_games::<BidV1>(lines)
+}
 
-    bids.sort();
-    bids.iter()
-        .enumerate()
-        .map(|(index, bid)| (index as u32 + 1) * bid.bid)
-        .sum()
+fn part2(lines: &Vec<impl AsRef<str>>) -> u32 {
+    compute_games::<BidV2>(lines)
 }
 
 #[cfg(test)]
