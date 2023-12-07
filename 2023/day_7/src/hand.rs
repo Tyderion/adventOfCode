@@ -70,19 +70,18 @@ impl From<&str> for Hand {
         card_counts.sort_by_key(|s| std::cmp::Reverse(*s.1));
         // println!("Got cards {:#?} and counts {:#?}", cards, card_counts);
 
-        if let Some((most, secondmost)) = card_counts.iter().map(|c| c.1).take(2).collect_tuple() {
-            match (most, secondmost) {
-                (1, _) => Hand::High(cards.try_into().unwrap()),
-                (2, 2) => Hand::TwoPairs(cards.try_into().unwrap()),
-                (2, _) => Hand::Pair(cards.try_into().unwrap()),
-                (3, 2) => Hand::FullHouse(cards.try_into().unwrap()),
-                (3, _) => Hand::ThreeOfAKind(cards.try_into().unwrap()),
-                (4, _) => Hand::FourOfAKind(cards.try_into().unwrap()),
-                (5, _) => Hand::FiveOfAKind(cards.try_into().unwrap()),
-                _ => panic!("IMPOSSIBLE {:?}", card_counts),
-            }
-        } else {
-            panic!("IMPOSSIBLE {:?}", card_counts)
+        match card_counts.iter().map(|c| c.1).take(2).collect_tuple() {
+            Some((1, _)) => Hand::High(cards.try_into().unwrap()),
+            Some((2, 2)) => Hand::TwoPairs(cards.try_into().unwrap()),
+            Some((2, _)) => Hand::Pair(cards.try_into().unwrap()),
+            Some((3, 2)) => Hand::FullHouse(cards.try_into().unwrap()),
+            Some((3, _)) => Hand::ThreeOfAKind(cards.try_into().unwrap()),
+            Some((4, _)) => Hand::FourOfAKind(cards.try_into().unwrap()),
+            None => match card_counts.first().map(|c| c.1) {
+                Some(5) => Hand::FiveOfAKind(cards.try_into().unwrap()),
+                _ => panic!("impossible count {:?}", card_counts),
+            },
+            _ => panic!("IMPOSSIBLE {:?}", card_counts),
         }
     }
 }
@@ -127,7 +126,6 @@ impl PartialOrd for Bid {
 
 impl From<&str> for Bid {
     fn from(value: &str) -> Self {
-        println!("Value: {:?}", value);
         let (hand, bid) = value.split(" ").collect_tuple().unwrap();
         Bid {
             hand: Hand::from(hand),
