@@ -1,3 +1,7 @@
+mod hand;
+
+use hand::Bid;
+
 pub fn main() {
     let filename = "day_7/src/input.txt";
     let input = fileutils::safe_lines_from_file(filename);
@@ -13,8 +17,17 @@ pub fn main() {
     println!("Sum of part 2: {}", part2_result);
 }
 
-fn part1(_lines: &Vec<impl AsRef<str>>) -> u64 {
-    0
+fn part1(lines: &Vec<impl AsRef<str>>) -> u32 {
+    let mut bids = lines
+        .iter()
+        .map(|l| Bid::from(l.as_ref()))
+        .collect::<Vec<Bid>>();
+
+    bids.sort();
+    bids.iter()
+        .enumerate()
+        .map(|(index, bid)| (index as u32 + 1) * bid.bid)
+        .sum()
 }
 
 fn part2(_lines: &Vec<impl AsRef<str>>) -> u64 {
