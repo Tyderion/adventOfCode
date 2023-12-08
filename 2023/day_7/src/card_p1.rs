@@ -1,3 +1,7 @@
+use std::collections::HashMap;
+
+use crate::traits::CardCounting;
+
 #[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Hash, Copy, Clone)]
 pub enum Card {
     Two,
@@ -33,6 +37,13 @@ impl From<char> for Card {
             '2' => Card::Two,
             _ => panic!("Invalid card {}", c),
         }
+    }
+}
+
+impl CardCounting for Card {
+    fn count_single_card(mut acc: HashMap<Card, u32>, card: &Card) -> HashMap<Card, u32> {
+        *acc.entry(*card).or_default() += 1;
+        acc
     }
 }
 

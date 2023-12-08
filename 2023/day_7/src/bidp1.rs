@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use itertools::Itertools;
 
-use crate::bid::WithBid;
+use crate::traits::WithBid;
 
 #[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Hash, Copy, Clone)]
 enum Card {

@@ -1,4 +1,4 @@
-use crate::bid::WithBid;
+use crate::traits::WithBid;
 use crate::card_p2::Card;
 
 use itertools::Itertools;
@@ -28,7 +28,7 @@ impl From<&str> for Hand {
         let card_counts =
             sorted_cards
                 .iter()
-                .fold(HashMap::new() as HashMap<Card, u32>, |mut acc, card| {
+                .fold(HashMap::new() as HashMap<Card, u32>, |mut acc: HashMap<Card, u32>, card: &Card| {
                     if *card == Card::Joker && acc.len() > 0 {
                         let clone = acc.clone();
                         // sort by most present and then by most valuable card

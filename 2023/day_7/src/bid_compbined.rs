@@ -3,33 +3,35 @@ use std::collections::HashMap;
 
 use itertools::Itertools;
 
-use crate::bid::WithBid;
 use crate::card_p1::Card;
+use crate::traits::{CardCounting, WithBid};
 
 #[derive(Debug, PartialEq, Eq, Ord, Hash, Copy, Clone)]
-enum Hand {
-    FiveOfAKind([Card; 5]),
-    FourOfAKind([Card; 5]),
-    FullHouse([Card; 5]),
-    ThreeOfAKind([Card; 5]),
-    TwoPairs([Card; 5]),
-    Pair([Card; 5]),
-    High([Card; 5]),
+enum Hand<T>
+where
+    T: Eq + PartialEq + PartialOrd + Ord + Copy + Clone + CardCounting,
+{
+    FiveOfAKind([T; 5]),
+    FourOfAKind([T; 5]),
+    FullHouse([T; 5]),
+    ThreeOfAKind([T; 5]),
+    TwoPairs([T; 5]),
+    Pair([T; 5]),
+    High([T; 5]),
 }
 
-impl From<&str> for Hand {
-    fn from(s: &str) -> Hand {
+impl<T> From<&str> for Hand<T>
+where
+    T: Eq + PartialEq + PartialOrd + Ord + Copy + Clone + CardCounting,
+{
+    fn from(s: &str) -> Hand<T> {
         if s.len() != 5 {
             panic!("Not a valid hand {}", s)
         }
         let cards = s.chars().map(Card::from).collect::<Vec<_>>();
-        let card_counts =
-            cards
-                .iter()
-                .fold(HashMap::new() as HashMap<Card, u32>, |mut acc, card| {
-                    *acc.entry(*card).or_default() += 1;
-                    acc
-                });
+        let card_counts = cards
+            .iter()
+            .fold(HashMap::new() as HashMap<Card, u32>, T::count_single_card);
 
         let mut card_counts = card_counts.iter().collect::<Vec<_>>();
         card_counts.sort_by_key(|s| std::cmp::Reverse(*s.1));
@@ -48,7 +50,10 @@ impl From<&str> for Hand {
     }
 }
 
-impl PartialOrd for Hand {
+impl<T> PartialOrd for Hand<T>
+where
+    T: Eq + PartialEq + PartialOrd + Ord + Copy + Clone + CardCounting,
+{
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match (self, other) {
             (Hand::FiveOfAKind(a), Hand::FiveOfAKind(b)) => Some(a.cmp(b)),
@@ -75,18 +80,27 @@ impl PartialOrd for Hand {
 }
 
 #[derive(Debug, Eq, PartialEq, Ord)]
-pub struct BidP1 {
-    hand: Hand,
+pub struct BidP1<T>
+where
+    T: Eq + PartialEq + PartialOrd + Ord + Copy + Clone + CardCounting,
+{
+    hand: Hand<T>,
     pub bid: u32,
 }
 
-impl PartialOrd for BidP1 {
+impl<T> PartialOrd for BidP1<T>
+where
+    T: Eq + PartialEq + PartialOrd + Ord + Copy + Clone + CardCounting,
+{
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.hand.partial_cmp(&other.hand)
     }
 }
 
-impl From<&str> for BidP1 {
+impl<T> From<&str> for BidP1<T>
+where
+    T: Eq + PartialEq + PartialOrd + Ord + Copy + Clone + CardCounting,
+{
     fn from(value: &str) -> Self {
         let (hand, bid) = value.split(" ").collect_tuple().unwrap();
         BidP1 {
@@ -96,7 +110,10 @@ impl From<&str> for BidP1 {
     }
 }
 
-impl WithBid for BidP1 {
+impl<T> WithBid for BidP1<T>
+where
+    T: Eq + PartialEq + PartialOrd + Ord + Copy + Clone + CardCounting,
+{
     fn get_bid(&self) -> u32 {
         self.bid
     }
@@ -152,5 +169,4 @@ mod tests {
             == Hand::Pair([Card::Three, Card::Two, Card::Ten, Card::Three, Card::King]);
         assert!(!result);
     }
-
 }

@@ -1,11 +1,11 @@
-mod bid;
+mod traits;
 mod bidp1;
 mod bidp2;
 mod bid_compbined;
 mod card_p1;
 mod card_p2;
 
-use bid::WithBid;
+use traits::WithBid;
 use bidp1::BidP1;
 use bidp2::BidP2;
 

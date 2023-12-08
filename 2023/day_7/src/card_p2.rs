@@ -1,3 +1,7 @@
+use std::{cmp::Reverse, collections::HashMap};
+
+use crate::traits::CardCounting;
+
 #[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Hash, Copy, Clone)]
 pub enum Card {
     Joker,
@@ -33,6 +37,21 @@ impl From<char> for Card {
             '2' => Card::Two,
             _ => panic!("Invalid card {}", c),
         }
+    }
+}
+
+impl CardCounting for Card {
+    fn count_single_card(mut acc: HashMap<Card, u32>, card: &Card) -> HashMap<Card, u32> {
+        if *card == Card::Joker && acc.len() > 0 {
+            let clone = acc.clone();
+            // sort by most present and then by most valuable card
+            let mut existing = clone.iter().collect::<Vec<_>>();
+            existing.sort_by_key(|v| Reverse((v.1, v.0)));
+            *acc.entry(*existing.first().unwrap().0).or_default() += 1;
+        } else {
+            *acc.entry(*card).or_default() += 1;
+        }
+        acc
     }
 }
 
