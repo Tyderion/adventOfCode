@@ -1,3 +1,5 @@
+use std::fs;
+
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -37,7 +39,18 @@ pub fn parse_day_config(input: &str) ->   Result<Config, String> {
     }
 }
 
+fn create_directories(config: &Config) {
+    let path = format!("{}/day_{}/src", config.year, config.day);
+    match fs::create_dir_all(&path) {
+        Ok(_) => println!("Successfully created directories {}", &path),
+        Err(error) => eprintln!("Error while creating directories: {}", error)
+    }
+}
+
 
 pub fn start_day(config: Config) {
     println!("Starting new day {:?}", config);
+    create_directories(&config);
+    
+
 }
