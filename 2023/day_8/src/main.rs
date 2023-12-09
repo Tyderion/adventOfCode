@@ -42,24 +42,20 @@ fn parse(lines: &Vec<impl AsRef<str>>) -> (Vec<char>, HashMap<String, Vec<String
     (instructions, map)
 }
 
-fn access_index(instructions: &Vec<char>, index: usize) -> usize {
-    if instructions[index] == 'L' {
-        0
-    } else {
-        1
-    }
-}
-
-fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
-    let (instructions, map) = parse(lines);
+fn compute_steps(
+    instructions: &Vec<char>,
+    map: &HashMap<String, Vec<String>>,
+    start_key: String,
+    has_ended: fn(key: String) -> bool,
+) -> u64 {
     let mut index = 0;
     let mut steps = 0;
-    let mut key = "AAA";
+    let mut key = &start_key;
     loop {
-        key = &map.get(key).unwrap()[access_index(&instructions, index)];
+        key = &map.get(key).unwrap()[if instructions[index] == 'L' { 0 } else { 1 }];
         index = (index + 1) % instructions.len();
         steps += 1;
-        if key == "ZZZ" {
+        if has_ended(key.to_string()) {
             break;
         }
     }
@@ -67,35 +63,22 @@ fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
     steps
 }
 
+fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
+    let (instructions, map) = parse(lines);
+    compute_steps(&instructions, &map, "AAA".to_string(), |key| key == "ZZZ")
+}
+
 fn part2(lines: &Vec<impl AsRef<str>>) -> u64 {
     let (instructions, map) = parse(lines);
-    let keys = map
-        .keys()
-        // .filter_map(|key| if key.ends_with("Z") { Some(key.to_string()) } else { None })
+    map.keys()
         .filter(|key| key.ends_with("A"))
-        .collect::<Vec<_>>();
-
-    let cumulative_steps = keys
-        .iter()
         .map(|starting_key| {
-            let mut index = 0;
-            let mut key = *starting_key;
-            let mut steps = 0;
-            loop {
-                key = &map.get(key).unwrap()[access_index(&instructions, index)];
-                index = (index + 1) % instructions.len();
-                steps += 1;
-                if key.ends_with("Z") {
-                    break;
-                }
-            }
-
-            steps
+            compute_steps(&instructions, &map, starting_key.to_string(), |key| {
+                key.ends_with("Z")
+            })
         })
         .reduce(|a, b| num_integer::lcm(a, b))
-        .unwrap();
-
-    cumulative_steps
+        .unwrap()
 }
 
 #[cfg(test)]
