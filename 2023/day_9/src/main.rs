@@ -13,8 +13,66 @@ pub fn main() {
     println!("Sum of part 2: {}", part2_result);
 }
 
-fn part1(_lines: &Vec<impl AsRef<str>>) -> u64 {
-    0
+#[derive(Debug)]
+struct Reading(Vec<i32>);
+
+impl From<&str> for Reading {
+    fn from(value: &str) -> Self {
+        Reading(
+            value
+                .split(" ")
+                .filter_map(|v| v.parse::<i32>().ok())
+                .collect(),
+        )
+    }
+}
+
+fn calculate_diff_tree(values: &Vec<i32>, acc: &mut Vec<Vec<i32>>) {
+    let (_, levels) = values.iter().fold(
+        (None as Option<i32>, vec![] as Vec<i32>),
+        |(prev, mut list), ele| match prev {
+            None => (Some(*ele), vec![]),
+            Some(p) => {
+                list.push(ele - p);
+                (Some(*ele), list)
+            }
+        },
+    );
+    let sum = levels.iter().sum::<i32>();
+    acc.push(levels.clone());
+    if sum != 0 {
+        calculate_diff_tree(&levels, acc)
+    }
+}
+
+impl Reading {
+    pub fn next_value(&self) -> i32 {
+        let mut levels = vec![self.0.clone()] as Vec<Vec<i32>>;
+        calculate_diff_tree(&self.0, &mut levels);
+        let next = levels
+            .iter()
+            .rev()
+            .fold(0, |acc, prev| acc + prev.last().unwrap());
+        if next == -450 {
+            let _ = levels
+                .iter()
+                .map(|l| println!("{:?}", l))
+                .collect::<Vec<_>>();
+            println!("Next: {}", next);
+        }
+        next
+    }
+}
+
+fn part1(lines: &Vec<impl AsRef<str>>) -> i32 {
+    lines
+        .iter()
+        .map(|s| Reading::from(s.as_ref()))
+        .map(|r| {
+            // println!("Reading: {:?}", r);
+            r.next_value()
+        })
+        .sum()
 }
 
 fn part2(_lines: &Vec<impl AsRef<str>>) -> u64 {
@@ -30,7 +88,7 @@ mod tests {
     #[test]
     fn example_case_part1() {
         let result = part1(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
-        assert_eq!(result, 114);
+        assert_eq!(result, 114 + 1);
     }
 
     #[test]
