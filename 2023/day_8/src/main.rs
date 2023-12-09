@@ -95,6 +95,19 @@ mod tests {
         "ZZZ = (ZZZ, ZZZ)",
     ];
 
+    const EXAMPLE_INPUT1_PART2: [&str; 10] = [
+        "LR",
+        "",
+        "11A = (11B, XXX)",
+        "11B = (XXX, 11Z)",
+        "11Z = (11B, XXX)",
+        "22A = (22B, XXX)",
+        "22B = (22C, 22C)",
+        "22C = (22Z, 22Z)",
+        "22Z = (22B, 22B)",
+        "XXX = (XXX, XXX)",
+    ];
+
     #[test]
     fn example_case1_part1() {
         let result = part1(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
@@ -104,6 +117,17 @@ mod tests {
     #[test]
     fn example_case2_part1() {
         let result = part1(&EXAMPLE_INPUT2.iter().map(|x| String::from(*x)).collect());
+        assert_eq!(result, 6);
+    }
+
+    #[test]
+    fn example_case_part2() {
+        let result = part2(
+            &EXAMPLE_INPUT1_PART2
+                .iter()
+                .map(|x| String::from(*x))
+                .collect(),
+        );
         assert_eq!(result, 6);
     }
 }
