@@ -1,4 +1,5 @@
 use std::fs;
+use toml_edit::{value, Document};
 
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -28,6 +29,10 @@ impl Config {
 
     fn main_file(&self) -> String {
         format!("{}/main.rs", self.src_folder())
+    }
+
+    fn root_toml(&self) -> String {
+        "Cargo.toml".to_string()
     }
 }
 
@@ -66,7 +71,8 @@ fn create_directories(config: &Config) {
 }
 
 fn download_input(config: &Config) -> Result<String, reqwest::Error> {
-    let session_cookie = std::env::var("SESSION_COOKIE").expect("SESSION_COOKIE must be set (.env supported)");
+    let session_cookie =
+        std::env::var("SESSION_COOKIE").expect("SESSION_COOKIE must be set (.env supported)");
     let client = reqwest::blocking::Client::new();
     client
         .get(&config.url)
@@ -170,10 +176,28 @@ fn write_main(config: &Config) {
     }
 }
 
+fn add_to_workspace(config: &Config) {
+    let toml_content = fs::read_to_string(config.root_toml())
+        .expect(format!("Toml file not found {}", config.root_toml()).as_str());
+
+    let mut toml = toml_content.parse::<Document>().expect("invalid doc");
+    let workspace_list = toml["workspace"]["members"].as_array_mut().unwrap();
+
+    workspace_list.push(config.root_folder());
+    workspace_list.fmt();
+
+    match fs::write(config.root_toml(), toml.to_string()) {
+        Ok(_) => println!("Successfully updated toml file {}", config.main_file()),
+        Err(e) => eprintln!("Error while writing main toml file {}", e),
+    }
+}
+
 pub fn start_day(config: Config) {
     println!("Starting new day {:?}", config);
-    create_directories(&config);
-    store_input_file(&config);
-    write_toml(&config);
-    write_main(&config);
+    // create_directories(&config);
+    // store_input_file(&config);
+    // write_toml(&config);
+    // write_main(&config);
+
+    add_to_workspace(&config);
 }
