@@ -6,14 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+clap = { version = "4.4.11", features = ["derive", "unicode"] }
+dotenv = "0.15.0"
+futures = "0.3.29"
+lazy_static = "1.4.0"
+regex = "1.4.3"
+reqwest = { version = "0.11.22", features = ["blocking"] }
+toml_edit = "0.21.0"
 
 [workspace]
-members = [
-    "day_1",
-    "day_2",
-    "day_3",
-    "day_4",
-]
-default-members = [
-    "day_4",
-]
+members = ["day_1", "day_2", "day_3", "day_4", "day_5", "day_6"]
