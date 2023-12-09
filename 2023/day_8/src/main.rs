@@ -1,3 +1,8 @@
+use std::collections::HashMap;
+
+use lazy_static::lazy_static;
+use regex::Regex;
+
 pub fn main() {
     let filename = "day_8/src/input.txt";
     let input = fileutils::safe_lines_from_file(filename);
@@ -13,8 +18,43 @@ pub fn main() {
     println!("Sum of part 2: {}", part2_result);
 }
 
-fn part1(_lines: &Vec<impl AsRef<str>>) -> u64 {
-    0
+fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
+    lazy_static! {
+        static ref RE: Regex = Regex::new(r"( =)|[(,)]").unwrap();
+    }
+
+    let (instruction_list, rest) = lines.split_first().unwrap();
+    let map = rest.iter().filter(|l| !l.as_ref().is_empty()).fold(
+        HashMap::new() as HashMap<String, Vec<String>>,
+        |mut acc, ele| {
+            let replaced = RE.replace_all(ele.as_ref(), "");
+            let [key, l, r] = replaced
+                .split(" ")
+                .map(|s| s.to_string())
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap();
+            acc.insert(key.to_string(), vec![l.to_string(), r.to_string()]);
+            acc
+        },
+    );
+
+    let instructions = instruction_list.as_ref().chars().collect::<Vec<_>>();
+
+    let mut index = 0;
+    let mut steps = 0;
+    let mut key = "AAA";
+    loop {
+        let access_index = if instructions[index] == 'L' { 0 } else { 1 };
+        key = &map.get(key).unwrap()[access_index];
+        index = (index + 1) % instructions.len();
+        steps += 1;
+        if key == "ZZZ" {
+            break;
+        }
+    }
+
+    steps
 }
 
 fn part2(_lines: &Vec<impl AsRef<str>>) -> u64 {
