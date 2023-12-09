@@ -1,3 +1,6 @@
+#![feature(async_await, await_macro)]
+use future::future;
+
 use clap::{Parser, Subcommand};
 use start_day::Config;
 
@@ -30,6 +33,6 @@ pub fn main() {
 
     match cli.command {
         Some(Commands::StartDay { input }) => start_day::start_day(input),
-        None => (),
+        None => future::empty(),
     }
 }

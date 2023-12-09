@@ -10,12 +10,34 @@ pub struct Config {
     year: u16,
 }
 
-pub fn parse_day_config(input: &str) ->   Result<Config, String> {
+impl Config {
+    fn root_folder(&self) -> String {
+        format!("{}/day_{}", self.year, self.day)
+    }
+
+    fn src_folder(&self) -> String {
+        format!("{}/src", self.root_folder())
+    }
+
+    fn input_file(&self) -> String {
+        format!("{}/input.txt", self.src_folder())
+    }
+
+    fn toml_file(&self) -> String {
+        format!("{}/Cargo.toml", self.root_folder())
+    }
+
+    fn main_file(&self) -> String {
+        format!("{}/main.rs", self.src_folder())
+    }
+}
+
+pub fn parse_day_config(input: &str) -> Result<Config, String> {
     lazy_static! {
-        
-        static ref RE: Regex =
-            Regex::new(r"^https:\/\/adventofcode.com\/(?<year>[0-9]{4})\/day\/(?<day>[0-9]{1,2})\/input$")
-                .unwrap();
+        static ref RE: Regex = Regex::new(
+            r"^https:\/\/adventofcode.com\/(?<year>[0-9]{4})\/day\/(?<day>[0-9]{1,2})\/input$"
+        )
+        .unwrap();
     }
 
     if let Some(captures) = RE.captures(input) {
@@ -35,22 +57,115 @@ pub fn parse_day_config(input: &str) ->   Result<Config, String> {
                 .unwrap(),
         })
     } else {
-        Err(format!("Not a valid adventofcode input url {}", input.to_string()))
+        Err(format!(
+            "Not a valid adventofcode input url {}",
+            input.to_string()
+        ))
     }
 }
 
 fn create_directories(config: &Config) {
-    let path = format!("{}/day_{}/src", config.year, config.day);
-    match fs::create_dir_all(&path) {
+    let path = config.src_folder();
+    match fs::create_dir_all(path) {
         Ok(_) => println!("Successfully created directories {}", &path),
-        Err(error) => eprintln!("Error while creating directories: {}", error)
+        Err(error) => eprintln!("Error while creating directories: {}", error),
     }
 }
 
+async fn download_input(config: &Config) -> Result<String, reqwest::Error> {
+    reqwest::get(&config.url).await?.text().await
+}
 
-pub fn start_day(config: Config) {
+async fn store_input_file(config: &Config) {
+    match download_input(config).await {
+        Ok(body) => {
+            fs::write(config.input_file(), body);
+        }
+        Err(err) => {
+            eprintln!("Error fetch result {}", err);
+        }
+    }
+}
+
+fn write_toml(config: &Config) {
+    let content = format!(
+        r#"
+[package]
+name = "day_{}"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+fileutils = {{ path = "../fileutils" }}
+[dev-dependencies]
+test-case = "3.3.1"
+    "#,
+        config.day
+    )
+    .trim();
+
+    fs::write(config.toml_file(), content);
+}
+
+fn write_main(config: &Config) {
+    let content = format!(
+        r#"
+    pub fn main() {{
+        let filename = "day_{}/src/input.txt";
+        let input = fileutils::safe_lines_from_file(filename);
+        let part1_result = match input {{
+            None => panic!("No input received"),
+            Some(ref lines) => part1(lines),
+        }};
+        let part2_result = match input {{
+            None => panic!("No input received"),
+            Some(ref lines) => part2(lines),
+        }};
+        println!("Sum of games: {{}}", part1_result);
+        println!("Sum of part 2: {{}}", part2_result);
+    }}
+    
+    fn part1(_lines: &Vec<impl AsRef<str>>) -> u64 {{
+        0
+    }}
+    
+    fn part2(_lines: &Vec<impl AsRef<str>>) -> u64 {{
+        0
+    }}
+    
+    #[cfg(test)]
+    mod tests {{
+        use super::*;
+    
+        const EXAMPLE_INPUT1: [&str; 9] = [
+            todo!()
+        ];
+
+    
+        #[test]
+        fn example_case_part1() {{
+            let result = part1(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
+            assert_eq!(result, todo!());
+        }}
+    
+        #[test]
+        fn example_case_part2() {{
+            let result = part2(&EXAMPLE_INPUT2.iter().map(|x| String::from(*x)).collect());
+            assert_eq!(result, todo!());
+        }}
+    }}
+    "#,
+        config.day
+    )
+    .trim();
+
+    fs::write(config.toml_file(), content);
+}
+
+pub async fn start_day(config: Config) {
     println!("Starting new day {:?}", config);
     create_directories(&config);
-    
-
+    store_input_file(&config).await;
+    write_toml(&config);
+    write_main(&config);
 }
