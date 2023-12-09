@@ -218,7 +218,7 @@ fn create_branch(config: &Config) {
 
     Command::new("git")
         .arg("commit")
-        .arg(format!("-m 'Initial Setup Day {}", config.day).as_str())
+        .arg(format!("-m Initial Setup Day {}", config.day).as_str())
         .status()
         .expect("git commit failed");
 }
