@@ -4,10 +4,12 @@ use toml_edit::Document;
 use lazy_static::lazy_static;
 use regex::Regex;
 
+use std::process::Command;
 #[derive(Debug, Clone)]
 pub struct Config {
     url: String,
     day: u8,
+    year: u16,
 }
 
 impl Config {
@@ -52,6 +54,12 @@ pub fn parse_day_config(input: &str) -> Result<Config, String> {
                 .unwrap()
                 .as_str()
                 .parse::<u8>()
+                .unwrap(),
+            year: captures
+                .name("year")
+                .unwrap()
+                .as_str()
+                .parse::<u16>()
                 .unwrap(),
         })
     } else {
@@ -192,6 +200,29 @@ fn add_to_workspace(config: &Config) {
     }
 }
 
+fn create_branch(config: &Config) {
+    let branch_name = format!("{}-day{}", config.year, config.day);
+
+    Command::new("git")
+        .arg("checkout")
+        .arg("-b")
+        .arg(&branch_name)
+        .status()
+        .expect(format!("Coudl not create new branch {}", &branch_name).as_str());
+
+    Command::new("git")
+        .arg("add")
+        .arg(".")
+        .status()
+        .expect("git add failed");
+
+    Command::new("git")
+        .arg("commit")
+        .arg(format!("-m 'Initial Setup Day {}", config.day).as_str())
+        .status()
+        .expect("git commit failed");
+}
+
 pub fn start_day(config: Config) {
     println!("Starting new day {:?}", config);
     create_directories(&config);
@@ -199,7 +230,7 @@ pub fn start_day(config: Config) {
     write_toml(&config);
     write_main(&config);
     add_to_workspace(&config);
-
+    create_branch(&config);
     println!(
         "Run new workspace with 'cargo run -p {}'",
         config.root_folder()
