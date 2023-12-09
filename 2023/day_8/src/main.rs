@@ -18,11 +18,10 @@ pub fn main() {
     println!("Sum of part 2: {}", part2_result);
 }
 
-fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
+fn parse(lines: &Vec<impl AsRef<str>>) -> (Vec<char>, HashMap<String, Vec<String>>) {
     lazy_static! {
         static ref RE: Regex = Regex::new(r"( =)|[(,)]").unwrap();
     }
-
     let (instruction_list, rest) = lines.split_first().unwrap();
     let map = rest.iter().filter(|l| !l.as_ref().is_empty()).fold(
         HashMap::new() as HashMap<String, Vec<String>>,
@@ -38,15 +37,26 @@ fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
             acc
         },
     );
-
     let instructions = instruction_list.as_ref().chars().collect::<Vec<_>>();
 
+    (instructions, map)
+}
+
+fn access_index(instructions: &Vec<char>, index: usize) -> usize {
+    if instructions[index] == 'L' {
+        0
+    } else {
+        1
+    }
+}
+
+fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
+    let (instructions, map) = parse(lines);
     let mut index = 0;
     let mut steps = 0;
     let mut key = "AAA";
     loop {
-        let access_index = if instructions[index] == 'L' { 0 } else { 1 };
-        key = &map.get(key).unwrap()[access_index];
+        key = &map.get(key).unwrap()[access_index(&instructions, index)];
         index = (index + 1) % instructions.len();
         steps += 1;
         if key == "ZZZ" {
