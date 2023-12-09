@@ -67,8 +67,35 @@ fn part1(lines: &Vec<impl AsRef<str>>) -> u64 {
     steps
 }
 
-fn part2(_lines: &Vec<impl AsRef<str>>) -> u64 {
-    0
+fn part2(lines: &Vec<impl AsRef<str>>) -> u64 {
+    let (instructions, map) = parse(lines);
+    let keys = map
+        .keys()
+        // .filter_map(|key| if key.ends_with("Z") { Some(key.to_string()) } else { None })
+        .filter(|key| key.ends_with("A"))
+        .collect::<Vec<_>>();
+
+    let cumulative_steps = keys
+        .iter()
+        .map(|starting_key| {
+            let mut index = 0;
+            let mut key = *starting_key;
+            let mut steps = 0;
+            loop {
+                key = &map.get(key).unwrap()[access_index(&instructions, index)];
+                index = (index + 1) % instructions.len();
+                steps += 1;
+                if key.ends_with("Z") {
+                    break;
+                }
+            }
+
+            steps
+        })
+        .reduce(|a, b| num_integer::lcm(a, b))
+        .unwrap();
+
+    cumulative_steps
 }
 
 #[cfg(test)]
