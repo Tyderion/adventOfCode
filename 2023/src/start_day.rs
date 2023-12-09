@@ -1,5 +1,5 @@
 use std::fs;
-use toml_edit::{value, Document};
+use toml_edit::Document;
 
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -194,10 +194,14 @@ fn add_to_workspace(config: &Config) {
 
 pub fn start_day(config: Config) {
     println!("Starting new day {:?}", config);
-    // create_directories(&config);
-    // store_input_file(&config);
-    // write_toml(&config);
-    // write_main(&config);
-
+    create_directories(&config);
+    store_input_file(&config);
+    write_toml(&config);
+    write_main(&config);
     add_to_workspace(&config);
+
+    println!(
+        "Run new workspace with 'cargo run -p {}'",
+        config.root_folder()
+    )
 }
