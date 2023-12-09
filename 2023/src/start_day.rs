@@ -66,7 +66,13 @@ fn create_directories(config: &Config) {
 }
 
 fn download_input(config: &Config) -> Result<String, reqwest::Error> {
-    reqwest::blocking::get(&config.url)?.text()
+    let session_cookie = std::env::var("SESSION_COOKIE").expect("SESSION_COOKIE must be set (.env supported)");
+    let client = reqwest::blocking::Client::new();
+    client
+        .get(&config.url)
+        .header("Cookie", format!("session={}", session_cookie))
+        .send()?
+        .text()
 }
 
 fn store_input_file(config: &Config) {

@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 use start_day::Config;
+use dotenv::dotenv;
 
 mod start_day;
 
@@ -26,6 +27,7 @@ enum Commands {
 }
 
 pub fn main() {
+    dotenv().ok();
     let cli = Cli::parse();
 
     match cli.command {
