@@ -7,12 +7,11 @@ use regex::Regex;
 pub struct Config {
     url: String,
     day: u8,
-    year: u16,
 }
 
 impl Config {
     fn root_folder(&self) -> String {
-        format!("{}/day_{}", self.year, self.day)
+        format!("day_{}", self.day)
     }
 
     fn src_folder(&self) -> String {
@@ -49,12 +48,6 @@ pub fn parse_day_config(input: &str) -> Result<Config, String> {
                 .as_str()
                 .parse::<u8>()
                 .unwrap(),
-            year: captures
-                .name("year")
-                .unwrap()
-                .as_str()
-                .parse::<u16>()
-                .unwrap(),
         })
     } else {
         Err(format!(
@@ -66,21 +59,22 @@ pub fn parse_day_config(input: &str) -> Result<Config, String> {
 
 fn create_directories(config: &Config) {
     let path = config.src_folder();
-    match fs::create_dir_all(path) {
+    match fs::create_dir_all(&path) {
         Ok(_) => println!("Successfully created directories {}", &path),
         Err(error) => eprintln!("Error while creating directories: {}", error),
     }
 }
 
-async fn download_input(config: &Config) -> Result<String, reqwest::Error> {
-    reqwest::get(&config.url).await?.text().await
+fn download_input(config: &Config) -> Result<String, reqwest::Error> {
+    reqwest::blocking::get(&config.url)?.text()
 }
 
-async fn store_input_file(config: &Config) {
-    match download_input(config).await {
-        Ok(body) => {
-            fs::write(config.input_file(), body);
-        }
+fn store_input_file(config: &Config) {
+    match download_input(config) {
+        Ok(body) => match fs::write(config.input_file(), body) {
+            Ok(_) => println!("Successfully created input file {}", config.input_file()),
+            Err(e) => eprintln!("Error while writing input file {}", e),
+        },
         Err(err) => {
             eprintln!("Error fetch result {}", err);
         }
@@ -102,9 +96,13 @@ test-case = "3.3.1"
     "#,
         config.day
     )
-    .trim();
+    .trim()
+    .to_string();
 
-    fs::write(config.toml_file(), content);
+    match fs::write(config.toml_file(), content) {
+        Ok(_) => println!("Successfully created toml file {}", config.toml_file()),
+        Err(e) => eprintln!("Error while writing toml file {}", e),
+    }
 }
 
 fn write_main(config: &Config) {
@@ -157,15 +155,19 @@ fn write_main(config: &Config) {
     "#,
         config.day
     )
-    .trim();
+    .trim()
+    .to_string();
 
-    fs::write(config.toml_file(), content);
+    match fs::write(config.main_file(), content) {
+        Ok(_) => println!("Successfully created main file {}", config.main_file()),
+        Err(e) => eprintln!("Error while writing main file {}", e),
+    }
 }
 
-pub async fn start_day(config: Config) {
+pub fn start_day(config: Config) {
     println!("Starting new day {:?}", config);
     create_directories(&config);
-    store_input_file(&config).await;
+    store_input_file(&config);
     write_toml(&config);
     write_main(&config);
 }
