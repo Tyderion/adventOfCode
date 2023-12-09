@@ -1,0 +1,9 @@
+[package]
+name = "day_8"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+fileutils = { path = "../fileutils" }
+[dev-dependencies]
+test-case = "3.3.1"
