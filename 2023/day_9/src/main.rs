@@ -38,9 +38,8 @@ fn calculate_diff_tree(values: &Vec<i32>, acc: &mut Vec<Vec<i32>>) {
             }
         },
     );
-    let sum = levels.iter().sum::<i32>();
     acc.push(levels.clone());
-    if sum != 0 {
+    if levels.iter().any(|ele| ele != &0) {
         calculate_diff_tree(&levels, acc)
     }
 }
@@ -53,13 +52,6 @@ impl Reading {
             .iter()
             .rev()
             .fold(0, |acc, prev| acc + prev.last().unwrap());
-        if next == -450 {
-            let _ = levels
-                .iter()
-                .map(|l| println!("{:?}", l))
-                .collect::<Vec<_>>();
-            println!("Next: {}", next);
-        }
         next
     }
 }
@@ -68,10 +60,7 @@ fn part1(lines: &Vec<impl AsRef<str>>) -> i32 {
     lines
         .iter()
         .map(|s| Reading::from(s.as_ref()))
-        .map(|r| {
-            // println!("Reading: {:?}", r);
-            r.next_value()
-        })
+        .map(|r| r.next_value())
         .sum()
 }
 
