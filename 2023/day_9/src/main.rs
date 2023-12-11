@@ -45,14 +45,17 @@ fn calculate_diff_tree(values: &Vec<i32>, acc: &mut Vec<Vec<i32>>) {
 }
 
 impl Reading {
-    pub fn next_value(&self) -> i32 {
+    fn get_value(&self, accumulate: fn(i32, &Vec<i32>) -> i32) -> i32 {
         let mut levels = vec![self.0.clone()] as Vec<Vec<i32>>;
         calculate_diff_tree(&self.0, &mut levels);
-        let next = levels
-            .iter()
-            .rev()
-            .fold(0, |acc, prev| acc + prev.last().unwrap());
-        next
+        levels.iter().rev().fold(0, accumulate)
+    }
+    pub fn next_value(&self) -> i32 {
+        self.get_value(|acc, prev| acc + prev.last().unwrap())
+    }
+
+    pub fn prev_value(&self) -> i32 {
+        self.get_value(|acc, prev| prev.first().unwrap() - acc)
     }
 }
 
@@ -64,8 +67,12 @@ fn part1(lines: &Vec<impl AsRef<str>>) -> i32 {
         .sum()
 }
 
-fn part2(_lines: &Vec<impl AsRef<str>>) -> u64 {
-    0
+fn part2(lines: &Vec<impl AsRef<str>>) -> i32 {
+    lines
+        .iter()
+        .map(|s| Reading::from(s.as_ref()))
+        .map(|r| r.prev_value())
+        .sum()
 }
 
 #[cfg(test)]
@@ -74,15 +81,17 @@ mod tests {
 
     const EXAMPLE_INPUT1: [&str; 3] = ["0 3 6 9 12 15", "1 3 6 10 15 21", "10 13 16 21 30 45"];
 
+    const EXAMPLE_INPUT1_3: [&str; 1] = ["10 13 16 21 30 45"];
+
     #[test]
     fn example_case_part1() {
         let result = part1(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
-        assert_eq!(result, 114 + 1);
+        assert_eq!(result, 114);
     }
 
     #[test]
     fn example_case_part2() {
-        let result = part2(&EXAMPLE_INPUT1.iter().map(|x| String::from(*x)).collect());
-        assert_eq!(result, todo!());
+        let result = part2(&EXAMPLE_INPUT1_3.iter().map(|x| String::from(*x)).collect());
+        assert_eq!(result, 5);
     }
 }
