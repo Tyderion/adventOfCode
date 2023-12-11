@@ -45,17 +45,17 @@ fn calculate_diff_tree(values: &Vec<i32>, acc: &mut Vec<Vec<i32>>) {
 }
 
 impl Reading {
-    fn get_value(&self, accumulate: fn(i32, &Vec<i32>) -> i32) -> i32 {
+    fn extrapolate_value(&self, accumulate: fn(i32, &Vec<i32>) -> i32) -> i32 {
         let mut levels = vec![self.0.clone()] as Vec<Vec<i32>>;
         calculate_diff_tree(&self.0, &mut levels);
         levels.iter().rev().fold(0, accumulate)
     }
     pub fn next_value(&self) -> i32 {
-        self.get_value(|acc, prev| acc + prev.last().unwrap())
+        self.extrapolate_value(|acc, prev| acc + prev.last().unwrap())
     }
 
     pub fn prev_value(&self) -> i32 {
-        self.get_value(|acc, prev| prev.first().unwrap() - acc)
+        self.extrapolate_value(|acc, prev| prev.first().unwrap() - acc)
     }
 }
 
