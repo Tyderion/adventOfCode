@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-fileutils = { path = "../fileutils" }
+execute = { path = "../execute" }
 lazy_static = "1.4.0"
 regex = "1.4.3"
 [dev-dependencies]

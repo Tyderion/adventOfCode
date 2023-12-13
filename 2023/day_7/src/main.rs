@@ -6,18 +6,7 @@ use bid::Bid;
 use traits::CardTraits;
 
 pub fn main() {
-    let filename = "day_7/src/input.txt";
-    let input = fileutils::safe_lines_from_file(filename);
-    let part1_result = match input {
-        None => panic!("No input received"),
-        Some(ref lines) => part1(lines),
-    };
-    let part2_result = match input {
-        None => panic!("No input received"),
-        Some(ref lines) => part2(lines),
-    };
-    println!("Sum of games: {}", part1_result);
-    println!("Sum of part 2: {}", part2_result);
+    execute::load_and_execute("day_7/src/input.txt", part1, part2);
 }
 
 fn compute_total_winnings<T>(lines: &Vec<impl AsRef<str>>) -> u32
