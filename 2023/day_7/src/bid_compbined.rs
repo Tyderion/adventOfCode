@@ -1,15 +1,13 @@
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
+use crate::traits::{CardTraits, WithBid};
 use itertools::Itertools;
-
-use crate::card_p1::Card;
-use crate::traits::{CardCounting, WithBid};
 
 #[derive(Debug, PartialEq, Eq, Ord, Hash, Copy, Clone)]
 enum Hand<T>
 where
-    T: Eq + PartialEq + PartialOrd + Ord + Copy + Clone + CardCounting,
+    T: CardTraits,
 {
     FiveOfAKind([T; 5]),
     FourOfAKind([T; 5]),
@@ -22,16 +20,20 @@ where
 
 impl<T> From<&str> for Hand<T>
 where
-    T: Eq + PartialEq + PartialOrd + Ord + Copy + Clone + CardCounting,
+    T: CardTraits,
 {
     fn from(s: &str) -> Hand<T> {
         if s.len() != 5 {
             panic!("Not a valid hand {}", s)
         }
-        let cards = s.chars().map(Card::from).collect::<Vec<_>>();
+        let cards = s.chars().map(T::from).collect::<Vec<_>>();
+
         let card_counts = cards
             .iter()
-            .fold(HashMap::new() as HashMap<Card, u32>, T::count_single_card);
+            .fold(HashMap::new() as HashMap<&T, u32>, |mut acc, ele| {
+                *acc.entry(ele.counts_as(&acc)).or_default() += 1;
+                acc
+            });
 
         let mut card_counts = card_counts.iter().collect::<Vec<_>>();
         card_counts.sort_by_key(|s| std::cmp::Reverse(*s.1));
@@ -52,7 +54,7 @@ where
 
 impl<T> PartialOrd for Hand<T>
 where
-    T: Eq + PartialEq + PartialOrd + Ord + Copy + Clone + CardCounting,
+    T: CardTraits,
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match (self, other) {
@@ -80,39 +82,39 @@ where
 }
 
 #[derive(Debug, Eq, PartialEq, Ord)]
-pub struct BidP1<T>
+pub struct Bid<T>
 where
-    T: Eq + PartialEq + PartialOrd + Ord + Copy + Clone + CardCounting,
+    T: CardTraits,
 {
     hand: Hand<T>,
     pub bid: u32,
 }
 
-impl<T> PartialOrd for BidP1<T>
+impl<T> PartialOrd for Bid<T>
 where
-    T: Eq + PartialEq + PartialOrd + Ord + Copy + Clone + CardCounting,
+    T: CardTraits,
 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.hand.partial_cmp(&other.hand)
     }
 }
 
-impl<T> From<&str> for BidP1<T>
+impl<T> From<&str> for Bid<T>
 where
-    T: Eq + PartialEq + PartialOrd + Ord + Copy + Clone + CardCounting,
+    T: CardTraits,
 {
     fn from(value: &str) -> Self {
         let (hand, bid) = value.split(" ").collect_tuple().unwrap();
-        BidP1 {
+        Bid {
             hand: Hand::from(hand),
             bid: bid.parse::<u32>().unwrap(),
         }
     }
 }
 
-impl<T> WithBid for BidP1<T>
+impl<T> WithBid for Bid<T>
 where
-    T: Eq + PartialEq + PartialOrd + Ord + Copy + Clone + CardCounting,
+    T: CardTraits,
 {
     fn get_bid(&self) -> u32 {
         self.bid
@@ -121,23 +123,26 @@ where
 
 #[cfg(test)]
 mod tests {
+
+    use crate::card_p1;
+
     use super::*;
 
     #[test]
     fn test_parse_hand() {
         let result = Hand::from("32T3K");
         assert_eq!(
-            Hand::Pair([Card::Three, Card::Two, Card::Ten, Card::Three, Card::King]),
+            Hand::Pair([card_p1::Card::Three, card_p1::Card::Two, card_p1::Card::Ten, card_p1::Card::Three, card_p1::Card::King]),
             result
         );
     }
 
     #[test]
     fn test_parse_bid() {
-        let result = BidP1::from("32T3K 765");
+        let result = Bid::from("32T3K 765");
         assert_eq!(
-            BidP1 {
-                hand: Hand::Pair([Card::Three, Card::Two, Card::Ten, Card::Three, Card::King]),
+            Bid {
+                hand: Hand::Pair([card_p1::Card::Three, card_p1::Card::Two, card_p1::Card::Ten, card_p1::Card::Three, card_p1::Card::King]),
                 bid: 765
             },
             result
@@ -146,27 +151,27 @@ mod tests {
 
     #[test]
     fn test_card_ordering() {
-        let result = Card::from('K') > Card::from('9');
+        let result = card_p1::Card::from('K') > card_p1::Card::from('9');
         assert!(result);
     }
 
     #[test]
     fn test_card_ordering2() {
-        let result = Card::from('T') > Card::from('9');
+        let result = card_p1::Card::from('T') > card_p1::Card::from('9');
         assert!(result);
     }
 
     #[test]
     fn test_hand_eq() {
-        let result = Hand::Pair([Card::Three, Card::Two, Card::Ten, Card::Three, Card::King])
-            == Hand::Pair([Card::Three, Card::Two, Card::Ten, Card::Three, Card::King]);
+        let result = Hand::Pair([card_p1::Card::Three, card_p1::Card::Two, card_p1::Card::Ten, card_p1::Card::Three, card_p1::Card::King])
+            == Hand::Pair([card_p1::Card::Three, card_p1::Card::Two, card_p1::Card::Ten, card_p1::Card::Three, card_p1::Card::King]);
         assert!(result);
     }
 
     #[test]
     fn test_hand_ne() {
-        let result = Hand::Pair([Card::Three, Card::Five, Card::Ten, Card::Three, Card::King])
-            == Hand::Pair([Card::Three, Card::Two, Card::Ten, Card::Three, Card::King]);
+        let result = Hand::Pair([card_p1::Card::Three, card_p1::Card::Five, card_p1::Card::Ten, card_p1::Card::Three, card_p1::Card::King])
+            == Hand::Pair([card_p1::Card::Three, card_p1::Card::Two, card_p1::Card::Ten, card_p1::Card::Three, card_p1::Card::King]);
         assert!(!result);
     }
 }

@@ -1,13 +1,15 @@
-mod traits;
+mod bid_compbined;
 mod bidp1;
 mod bidp2;
-mod bid_compbined;
 mod card_p1;
 mod card_p2;
+mod traits;
 
-use traits::WithBid;
+use bid_compbined::Bid;
 use bidp1::BidP1;
 use bidp2::BidP2;
+use card_p1::Card;
+use traits::WithBid;
 
 pub fn main() {
     let filename = "day_7/src/input.txt";
@@ -34,6 +36,7 @@ where
         .collect::<Vec<T>>();
 
     bids.sort();
+
     bids.iter()
         .enumerate()
         .map(|(index, bid)| (index as u32 + 1) * bid.get_bid())
@@ -41,11 +44,11 @@ where
 }
 
 fn part1(lines: &Vec<impl AsRef<str>>) -> u32 {
-    compute_total_winnings::<BidP1>(lines)
+    compute_total_winnings::<Bid<card_p1::Card>>(lines)
 }
 
 fn part2(lines: &Vec<impl AsRef<str>>) -> u32 {
-    compute_total_winnings::<BidP2>(lines)
+    compute_total_winnings::<Bid<card_p2::Card>>(lines)
 }
 
 #[cfg(test)]

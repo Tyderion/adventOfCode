@@ -41,10 +41,14 @@ impl From<char> for Card {
 }
 
 impl CardCounting for Card {
-    fn count_single_card(mut acc: HashMap<Card, u32>, card: &Card) -> HashMap<Card, u32> {
-        *acc.entry(*card).or_default() += 1;
-        acc
+    fn counts_as<'a>(&'a self, counts: &HashMap<&'a Self, u32>) -> &'a Self {
+        self
     }
+
+    // fn count_single_card<'a>(mut acc: &'a mut HashMap<&Card, u32>, card: &Card) -> &'a HashMap<&'a Card, u32> {
+    //     *acc.entry(card).or_default() += 1;
+    //     acc
+    // }
 }
 
 #[cfg(test)]
