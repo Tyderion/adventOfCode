@@ -1,12 +1,15 @@
-use std::{collections::HashMap, fmt};
-
-pub trait WithBid {
-    fn get_bid(&self) -> u32;
-}
+use std::{collections::HashMap, fmt::Debug, hash::Hash};
 
 pub trait CardCounting {
-   fn counts_as<'a>(&'a self, counts: &HashMap<&'a Self, u32>) -> &'a Self;
+    fn counts_as<'a>(&'a self, counted: &HashMap<&'a Self, u32>) -> &'a Self;
 }
 
-pub trait CardTraits: Eq + PartialEq + PartialOrd + Ord + Copy + Clone + CardCounting + From<char> + fmt::Debug + std::hash::Hash {}
-impl<T: Eq + PartialEq + PartialOrd + Ord + Copy + Clone + CardCounting + From<char> + fmt::Debug + std::hash::Hash> CardTraits for T {}
+// All the traits needed for card sorting/counting/hashing/debugging
+pub trait CardTraits:
+    Eq + PartialEq + PartialOrd + Ord + Copy + CardCounting + From<char> + Debug + Hash
+{
+}
+impl<T: Eq + PartialEq + PartialOrd + Ord + Copy + CardCounting + From<char> + Debug + Hash>
+    CardTraits for T
+{
+}

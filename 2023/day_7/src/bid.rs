@@ -1,7 +1,7 @@
 use std::cmp::{Ordering, Reverse};
 use std::collections::HashMap;
 
-use crate::traits::{CardTraits, WithBid};
+use crate::traits::CardTraits;
 use itertools::Itertools;
 
 #[derive(Debug, PartialEq, Eq, Ord, Hash, Copy, Clone)]
@@ -39,7 +39,7 @@ where
                 });
 
         let mut card_counts = card_counts.iter().collect::<Vec<_>>();
-        card_counts.sort_by_key(|s| std::cmp::Reverse(*s.1));
+        card_counts.sort_by_key(|s| Reverse(*s.1));
 
         match card_counts.iter().map(|c| c.1).take(2).collect::<Vec<_>>()[..] {
             [1, _] => Hand::High(cards.try_into().unwrap()),
@@ -89,7 +89,7 @@ where
     T: CardTraits,
 {
     hand: Hand<T>,
-    pub bid: u32,
+    pub amount: u32,
 }
 
 impl<T> PartialOrd for Bid<T>
@@ -106,20 +106,11 @@ where
     T: CardTraits,
 {
     fn from(value: &str) -> Self {
-        let (hand, bid) = value.split(" ").collect_tuple().unwrap();
+        let (hand, amount) = value.split(" ").collect_tuple().unwrap();
         Bid {
             hand: Hand::from(hand),
-            bid: bid.parse::<u32>().unwrap(),
+            amount: amount.parse::<u32>().unwrap(),
         }
-    }
-}
-
-impl<T> WithBid for Bid<T>
-where
-    T: CardTraits,
-{
-    fn get_bid(&self) -> u32 {
-        self.bid
     }
 }
 
@@ -173,7 +164,7 @@ mod tests {
                     card_p1::Card::Three,
                     card_p1::Card::King
                 ]),
-                bid: 765
+                amount: 765
             },
             result
         );

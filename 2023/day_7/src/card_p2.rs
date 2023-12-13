@@ -41,9 +41,9 @@ impl From<char> for Card {
 }
 
 impl CardCounting for Card {
-    fn counts_as<'a>(&'a self, counts: &HashMap<&'a Self, u32>) -> &'a Self {
-        if *self == Card::Joker && counts.len() > 0 {
-            let clone = counts.clone();
+    fn counts_as<'a>(&'a self, counted: &HashMap<&'a Self, u32>) -> &'a Self {
+        if *self == Card::Joker && counted.len() > 0 {
+            let clone = counted.clone();
             // sort by most present and then by most valuable card
             let mut existing = clone.iter().collect::<Vec<_>>();
             existing.sort_by_key(|v| Reverse((v.1, v.0)));

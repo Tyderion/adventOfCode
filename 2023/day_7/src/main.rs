@@ -2,11 +2,8 @@ mod bid;
 mod card_p1;
 mod card_p2;
 mod traits;
-
-use core::fmt;
-
 use bid::Bid;
-use traits::WithBid;
+use traits::CardTraits;
 
 pub fn main() {
     let filename = "day_7/src/input.txt";
@@ -25,26 +22,26 @@ pub fn main() {
 
 fn compute_total_winnings<T>(lines: &Vec<impl AsRef<str>>) -> u32
 where
-    T: PartialEq + PartialOrd + Eq + Ord + for<'a> From<&'a str> + WithBid + fmt::Debug,
+    T: CardTraits,
 {
     let mut bids = lines
         .iter()
-        .map(|l| T::from(l.as_ref()))
-        .collect::<Vec<T>>();
+        .map(|l| Bid::<T>::from(l.as_ref()))
+        .collect::<Vec<_>>();
 
     bids.sort();
     bids.iter()
         .enumerate()
-        .map(|(index, bid)| (index as u32 + 1) * bid.get_bid())
+        .map(|(index, bid)| (index as u32 + 1) * bid.amount)
         .sum()
 }
 
 fn part1(lines: &Vec<impl AsRef<str>>) -> u32 {
-    compute_total_winnings::<Bid<card_p1::Card>>(lines)
+    compute_total_winnings::<card_p1::Card>(lines)
 }
 
 fn part2(lines: &Vec<impl AsRef<str>>) -> u32 {
-    compute_total_winnings::<Bid<card_p2::Card>>(lines)
+    compute_total_winnings::<card_p2::Card>(lines)
 }
 
 #[cfg(test)]
