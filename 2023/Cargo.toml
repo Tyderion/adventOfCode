@@ -15,4 +15,4 @@ reqwest = { version = "0.11.22", features = ["blocking"] }
 toml_edit = "0.21.0"
 
 [workspace]
-members = ["day_1", "day_2", "day_3", "day_4", "day_5", "day_6", "day_7", "day_8", "day_9"]
+members = ["day_1", "day_2", "day_3", "day_4", "day_5", "day_6", "day_7", "day_8", "day_9", "day_11"]
