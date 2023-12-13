@@ -23,7 +23,7 @@ fn compute_distances(lines: &Vec<impl AsRef<str>>, empty_space_size: usize) -> u
         .flat_map(|(row, l)| {
             l.as_ref().chars().enumerate().filter_map(move |(col, c)| {
                 if c == '#' {
-                    Some(Galaxy { row: row, col: col })
+                    Some(Galaxy { row, col })
                 } else {
                     None
                 }
@@ -62,9 +62,9 @@ fn compute_distances(lines: &Vec<impl AsRef<str>>, empty_space_size: usize) -> u
         });
 
     let mut sum = 0 as usize;
-    for (i, galaxy_1) in galaxies.iter().enumerate() {
-        for galaxy_2 in galaxies[i + 1..].iter() {
-            sum += galaxy_1.distance(galaxy_2);
+    for (i, galaxy_a) in galaxies.iter().enumerate() {
+        for galaxy_b in galaxies[i + 1..].iter() {
+            sum += galaxy_a.distance(galaxy_b);
         }
     }
     sum
@@ -75,7 +75,7 @@ fn part1(lines: &Vec<impl AsRef<str>>) -> usize {
 }
 
 fn part2(lines: &Vec<impl AsRef<str>>) -> usize {
-    compute_distances(lines, 1000000 as usize)
+    compute_distances(lines, 1000000)
 }
 
 #[cfg(test)]
