@@ -40,19 +40,6 @@ impl From<char> for Card {
     }
 }
 
-// fn count_single_card(mut map: HashMap<Card, u32>, card: &Card) -> HashMap<Card, u32> {
-//     if *card == Card::Joker && acc.len() > 0 {
-//         let clone = acc.clone();
-//         // sort by most present and then by most valuable card
-//         let mut existing = clone.iter().collect::<Vec<_>>();
-//         existing.sort_by_key(|v| Reverse((v.1, v.0)));
-//         *acc.entry(*existing.first().unwrap().0).or_default() += 1;
-//     } else {
-//         *acc.entry(*card).or_default() += 1;
-//     }
-//     acc
-// }
-
 impl CardCounting for Card {
     fn counts_as<'a>(&'a self, counts: &HashMap<&'a Self, u32>) -> &'a Self {
         if *self == Card::Joker && counts.len() > 0 {

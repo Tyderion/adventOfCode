@@ -1,76 +1,45 @@
-use std::cmp::Ordering;
+use std::cmp::{Ordering, Reverse};
 use std::collections::HashMap;
 
+use crate::traits::{CardTraits, WithBid};
 use itertools::Itertools;
 
-use crate::traits::WithBid;
-
-#[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Hash, Copy, Clone)]
-enum Card {
-    Two,
-    Three,
-    Four,
-    Five,
-    Six,
-    Seven,
-    Eight,
-    Nine,
-    Ten,
-    Jack,
-    Queen,
-    King,
-    Ace,
-}
-
-impl From<char> for Card {
-    fn from(c: char) -> Card {
-        match c {
-            'A' => Card::Ace,
-            'K' => Card::King,
-            'Q' => Card::Queen,
-            'J' => Card::Jack,
-            'T' => Card::Ten,
-            '9' => Card::Nine,
-            '8' => Card::Eight,
-            '7' => Card::Seven,
-            '6' => Card::Six,
-            '5' => Card::Five,
-            '4' => Card::Four,
-            '3' => Card::Three,
-            '2' => Card::Two,
-            _ => panic!("Invalid card {}", c),
-        }
-    }
-}
-
 #[derive(Debug, PartialEq, Eq, Ord, Hash, Copy, Clone)]
-enum Hand {
-    FiveOfAKind([Card; 5]),
-    FourOfAKind([Card; 5]),
-    FullHouse([Card; 5]),
-    ThreeOfAKind([Card; 5]),
-    TwoPairs([Card; 5]),
-    Pair([Card; 5]),
-    High([Card; 5]),
+enum Hand<T>
+where
+    T: CardTraits,
+{
+    FiveOfAKind([T; 5]),
+    FourOfAKind([T; 5]),
+    FullHouse([T; 5]),
+    ThreeOfAKind([T; 5]),
+    TwoPairs([T; 5]),
+    Pair([T; 5]),
+    High([T; 5]),
 }
 
-impl From<&str> for Hand {
-    fn from(s: &str) -> Hand {
+impl<T> From<&str> for Hand<T>
+where
+    T: CardTraits,
+{
+    fn from(s: &str) -> Hand<T> {
         if s.len() != 5 {
             panic!("Not a valid hand {}", s)
         }
-        let cards = s.chars().map(Card::from).collect::<Vec<_>>();
+        let cards = s.chars().map(T::from).collect::<Vec<_>>();
+        let mut sorted_cards = cards.clone();
+        sorted_cards.sort_by_key(|e| Reverse(*e));
+
         let card_counts =
-            cards
+            sorted_cards
                 .iter()
-                .fold(HashMap::new() as HashMap<Card, u32>, |mut acc, card| {
-                    *acc.entry(*card).or_default() += 1;
+                .fold(HashMap::new() as HashMap<&T, u32>, |mut acc, ele| {
+                    *acc.entry(ele.counts_as(&acc)).or_default() += 1;
                     acc
                 });
 
         let mut card_counts = card_counts.iter().collect::<Vec<_>>();
         card_counts.sort_by_key(|s| std::cmp::Reverse(*s.1));
-        // println!("Got cards {:#?} and counts {:#?}", cards, card_counts);
 
         match card_counts.iter().map(|c| c.1).take(2).collect::<Vec<_>>()[..] {
             [1, _] => Hand::High(cards.try_into().unwrap()),
@@ -85,7 +54,10 @@ impl From<&str> for Hand {
     }
 }
 
-impl PartialOrd for Hand {
+impl<T> PartialOrd for Hand<T>
+where
+    T: CardTraits,
+{
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match (self, other) {
             (Hand::FiveOfAKind(a), Hand::FiveOfAKind(b)) => Some(a.cmp(b)),
@@ -112,28 +84,40 @@ impl PartialOrd for Hand {
 }
 
 #[derive(Debug, Eq, PartialEq, Ord)]
-pub struct BidP1 {
-    hand: Hand,
+pub struct Bid<T>
+where
+    T: CardTraits,
+{
+    hand: Hand<T>,
     pub bid: u32,
 }
 
-impl PartialOrd for BidP1 {
+impl<T> PartialOrd for Bid<T>
+where
+    T: CardTraits,
+{
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.hand.partial_cmp(&other.hand)
     }
 }
 
-impl From<&str> for BidP1 {
+impl<T> From<&str> for Bid<T>
+where
+    T: CardTraits,
+{
     fn from(value: &str) -> Self {
         let (hand, bid) = value.split(" ").collect_tuple().unwrap();
-        BidP1 {
+        Bid {
             hand: Hand::from(hand),
             bid: bid.parse::<u32>().unwrap(),
         }
     }
 }
 
-impl WithBid for BidP1 {
+impl<T> WithBid for Bid<T>
+where
+    T: CardTraits,
+{
     fn get_bid(&self) -> u32 {
         self.bid
     }
@@ -141,23 +125,54 @@ impl WithBid for BidP1 {
 
 #[cfg(test)]
 mod tests {
+
+    use crate::card_p1;
+    use crate::card_p2;
+
     use super::*;
+
+    #[test]
+    fn test_parse_four_of_a_kind() {
+        let result = Hand::<card_p2::Card>::from("KTJJT");
+        assert_eq!(
+            Hand::FourOfAKind([
+                card_p2::Card::King,
+                card_p2::Card::Ten,
+                card_p2::Card::Joker,
+                card_p2::Card::Joker,
+                card_p2::Card::Ten
+            ]),
+            result
+        );
+    }
 
     #[test]
     fn test_parse_hand() {
         let result = Hand::from("32T3K");
         assert_eq!(
-            Hand::Pair([Card::Three, Card::Two, Card::Ten, Card::Three, Card::King]),
+            Hand::Pair([
+                card_p1::Card::Three,
+                card_p1::Card::Two,
+                card_p1::Card::Ten,
+                card_p1::Card::Three,
+                card_p1::Card::King
+            ]),
             result
         );
     }
 
     #[test]
     fn test_parse_bid() {
-        let result = BidP1::from("32T3K 765");
+        let result = Bid::from("32T3K 765");
         assert_eq!(
-            BidP1 {
-                hand: Hand::Pair([Card::Three, Card::Two, Card::Ten, Card::Three, Card::King]),
+            Bid {
+                hand: Hand::Pair([
+                    card_p1::Card::Three,
+                    card_p1::Card::Two,
+                    card_p1::Card::Ten,
+                    card_p1::Card::Three,
+                    card_p1::Card::King
+                ]),
                 bid: 765
             },
             result
@@ -166,63 +181,49 @@ mod tests {
 
     #[test]
     fn test_card_ordering() {
-        let result = Card::from('K') > Card::from('9');
+        let result = card_p1::Card::from('K') > card_p1::Card::from('9');
         assert!(result);
     }
 
     #[test]
     fn test_card_ordering2() {
-        let result = Card::from('T') > Card::from('9');
+        let result = card_p1::Card::from('T') > card_p1::Card::from('9');
         assert!(result);
     }
 
     #[test]
     fn test_hand_eq() {
-        let result = Hand::Pair([Card::Three, Card::Two, Card::Ten, Card::Three, Card::King])
-            == Hand::Pair([Card::Three, Card::Two, Card::Ten, Card::Three, Card::King]);
+        let result = Hand::Pair([
+            card_p1::Card::Three,
+            card_p1::Card::Two,
+            card_p1::Card::Ten,
+            card_p1::Card::Three,
+            card_p1::Card::King,
+        ]) == Hand::Pair([
+            card_p1::Card::Three,
+            card_p1::Card::Two,
+            card_p1::Card::Ten,
+            card_p1::Card::Three,
+            card_p1::Card::King,
+        ]);
         assert!(result);
     }
 
     #[test]
     fn test_hand_ne() {
-        let result = Hand::Pair([Card::Three, Card::Five, Card::Ten, Card::Three, Card::King])
-            == Hand::Pair([Card::Three, Card::Two, Card::Ten, Card::Three, Card::King]);
+        let result = Hand::Pair([
+            card_p1::Card::Three,
+            card_p1::Card::Five,
+            card_p1::Card::Ten,
+            card_p1::Card::Three,
+            card_p1::Card::King,
+        ]) == Hand::Pair([
+            card_p1::Card::Three,
+            card_p1::Card::Two,
+            card_p1::Card::Ten,
+            card_p1::Card::Three,
+            card_p1::Card::King,
+        ]);
         assert!(!result);
-    }
-
-    #[test]
-    fn test_card_array_ordering_greater() {
-        let result = [Card::Three, Card::Five, Card::Ten, Card::Three, Card::King].cmp(&[
-            Card::Three,
-            Card::Two,
-            Card::Ten,
-            Card::Three,
-            Card::King,
-        ]);
-        assert_eq!(Ordering::Greater, result);
-    }
-
-    #[test]
-    fn test_card_array_ordering_less() {
-        let result = [Card::Two, Card::Two, Card::Ten, Card::Three, Card::King].cmp(&[
-            Card::Three,
-            Card::Two,
-            Card::Ten,
-            Card::Three,
-            Card::King,
-        ]);
-        assert_eq!(Ordering::Less, result);
-    }
-
-    #[test]
-    fn test_card_array_ordering_equal() {
-        let result = [Card::Two, Card::Two, Card::Ten, Card::Three, Card::King].cmp(&[
-            Card::Two,
-            Card::Two,
-            Card::Ten,
-            Card::Three,
-            Card::King,
-        ]);
-        assert_eq!(Ordering::Equal, result);
     }
 }

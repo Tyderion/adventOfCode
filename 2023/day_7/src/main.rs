@@ -1,14 +1,11 @@
-mod bid_compbined;
-mod bidp1;
-mod bidp2;
+mod bid;
 mod card_p1;
 mod card_p2;
 mod traits;
 
-use bid_compbined::Bid;
-use bidp1::BidP1;
-use bidp2::BidP2;
-use card_p1::Card;
+use core::fmt;
+
+use bid::Bid;
 use traits::WithBid;
 
 pub fn main() {
@@ -28,7 +25,7 @@ pub fn main() {
 
 fn compute_total_winnings<T>(lines: &Vec<impl AsRef<str>>) -> u32
 where
-    T: PartialEq + PartialOrd + Eq + Ord + for<'a> From<&'a str> + WithBid,
+    T: PartialEq + PartialOrd + Eq + Ord + for<'a> From<&'a str> + WithBid + fmt::Debug,
 {
     let mut bids = lines
         .iter()
@@ -36,7 +33,6 @@ where
         .collect::<Vec<T>>();
 
     bids.sort();
-
     bids.iter()
         .enumerate()
         .map(|(index, bid)| (index as u32 + 1) * bid.get_bid())
