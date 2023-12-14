@@ -1,0 +1,18 @@
+[package]
+name = "advent_of_code_2022"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "4.4.11", features = ["derive", "unicode"] }
+dotenv = "0.15.0"
+futures = "0.3.29"
+lazy_static = "1.4.0"
+regex = "1.4.3"
+reqwest = { version = "0.11.22", features = ["blocking"] }
+toml_edit = "0.21.0"
+
+[workspace]
+members = ["day_1", "day_2", "day_3", "day_4", "day_5", "day_6", "day_7", "day_8", "day_9", "day_11"]
